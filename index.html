@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BBA Competition Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
+<style>
+  :root{
+    --ink:#16203a; --muted:#5d6782; --line:#e2e6ef; --bg:#f4f6fb; --card:#fff;
+    --brand:#1b2f5e; --accent:#f5b301; --danger:#c0392b; --ok:#1e8e5a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Montserrat,system-ui,sans-serif;font-size:14px}
+  header{background:var(--brand);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.3px}
+  header h1 span{color:var(--accent)}
+  nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  nav button{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 14px;border-radius:999px;font:600 13px Montserrat,system-ui,sans-serif;cursor:pointer}
+  nav button.on{background:var(--accent);color:#1b1b1b;border-color:var(--accent)}
+  main{max-width:1180px;margin:0 auto;padding:22px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+  .card h2{font-size:16px;margin:0 0 4px}
+  .card p.hint{color:var(--muted);margin:0 0 14px;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  label{display:block;font-weight:600;font-size:12px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font:500 14px Montserrat,system-ui,sans-serif;color:var(--ink);background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid #9fb3e6;border-color:#9fb3e6}
+  .check{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;color:var(--ink);text-transform:none;letter-spacing:0;margin:0;cursor:pointer}
+  .btn{background:var(--brand);color:#fff;border:0;padding:10px 16px;border-radius:10px;font:700 13px Montserrat,system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .btn:hover{filter:brightness(1.12)}
+  .btn.alt{background:#fff;color:var(--brand);border:1px solid var(--line)}
+  .btn.gold{background:var(--accent);color:#1b1b1b}
+  .btn.sm{padding:6px 10px;font-size:12px}
+  .btn.danger{background:#fff;color:var(--danger);border:1px solid #f0c9c4}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .themes{display:flex;gap:10px;flex-wrap:wrap}
+  .sw{width:54px;height:38px;border-radius:9px;cursor:pointer;border:3px solid transparent;position:relative}
+  .sw.on{border-color:var(--ink)}
+  .sw i{position:absolute;right:5px;bottom:5px;width:12px;height:12px;border-radius:50%}
+  .rounds{display:flex;gap:8px;flex-wrap:wrap}
+  .rounds .r{display:flex;gap:4px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:4px}
+  .rounds .r input{width:130px;border:0;background:transparent;padding:5px}
+  .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:6px}
+  .x:hover{background:#f6dcd8;color:var(--danger)}
+  table.sc{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+  table.sc th{background:var(--bg);text-align:left;padding:9px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border-bottom:1px solid var(--line);position:sticky;top:0}
+  table.sc td{padding:5px 6px;border-bottom:1px solid var(--line)}
+  table.sc td input{padding:7px 8px;border-radius:7px}
+  table.sc td.num input{width:76px;text-align:center}
+  table.sc td.tot{font-weight:800;text-align:center;min-width:60px}
+  table.sc td.rk{text-align:center;min-width:56px}
+  .pill{display:inline-block;min-width:34px;padding:4px 9px;border-radius:999px;font-weight:800;background:var(--bg)}
+  .p1{background:#f5c542;color:#3b2a00}.p2{background:#d5dbe3;color:#2b3340}.p3{background:#e3a26b;color:#3a1d05}
+  .tablewrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:10px}
+  .tie{color:#b9770e;font-size:11px;font-weight:700;display:block}
+  /* Present */
+  #present{display:flex;flex-direction:column;gap:12px}
+  .stagewrap{background:#0b0f1c;border-radius:14px;padding:0;position:relative;overflow:hidden}
+  .stagewrap:fullscreen{border-radius:0;display:flex;align-items:center;justify-content:center;background:#000}
+  #stage{display:block;width:100%;height:auto;aspect-ratio:16/9;transition:opacity .35s}
+  .stagewrap:fullscreen #stage{width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh}
+  #fx{position:absolute;inset:0;pointer-events:none;width:100%;height:100%}
+  .ctrl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .ctrl .count{font-weight:700;color:var(--muted);min-width:90px;text-align:center}
+  .thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+  .thumbs canvas{width:150px;height:84px;border-radius:7px;cursor:pointer;border:3px solid transparent;flex:none}
+  .thumbs canvas.on{border-color:var(--accent)}
+  .exp{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+  .exp .card{margin:0;display:flex;flex-direction:column;gap:10px}
+  .exp .card .ico{font-size:28px}
+  .exp .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+  .steps{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.7}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .modal{position:fixed;inset:0;background:rgba(10,15,30,.55);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
+  .modal.show{display:flex}
+  .modal .box{background:#fff;border-radius:14px;padding:22px;max-width:640px;width:100%}
+  .modal textarea{height:220px;font-family:ui-monospace,monospace;font-size:13px}
+  .hidden{display:none!important}
+  #acct{background:#fff;border-bottom:1px solid var(--line);padding:10px 22px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
+  #acct select{width:auto;min-width:200px;padding:6px 9px}
+  #acct .who{display:flex;align-items:center;gap:8px;font-weight:700}
+  #acct img{width:26px;height:26px;border-radius:50%}
+  #acct .sp{flex:1}
+  #syncState{color:var(--muted);font-weight:600}
+  body.display{background:#000}
+  body.display header,body.display #acct,body.display main>section:not(#present),body.display .ctrl,body.display .thumbs{display:none!important}
+  body.display main{max-width:none;padding:0;height:100vh;display:flex;align-items:center;justify-content:center}
+  body.display #present{width:min(100vw,177.78vh)}
+  body.display .stagewrap{border-radius:0}
+  #dispMsg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;color:#fff;font:700 22px Montserrat,system-ui,sans-serif;text-align:center;padding:30px;background:#0b0f1c;z-index:60}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+  @media (max-width:700px){main{padding:12px}.card{padding:14px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏆 Ranking <span>Results</span></h1>
+  <span id="modeBadge" style="font:800 11px Montserrat,system-ui,sans-serif;letter-spacing:.5px;padding:5px 10px;border-radius:999px;color:#1b1b1b"></span>
+  <nav id="tabs">
+    <button data-tab="setup" class="on">1 · Setup</button>
+    <button data-tab="scores">2 · Scores</button>
+    <button data-tab="present">3 · Present</button>
+    <button data-tab="export">4 · Export</button>
+  </nav>
+</header>
+<div id="acct"><span id="acctBody">Connecting…</span><span class="sp"></span><span id="syncState"></span></div>
+<div id="dispMsg"></div>
+
+<main>
+<!-- SETUP -->
+<section id="setup">
+  <div class="card">
+    <h2>Competition details</h2>
+    <p class="hint">These appear on the title slide and footer of every slide.</p>
+    <div class="grid">
+      <div><label>Competition title</label><input type="text" data-k="title"></div>
+      <div><label>Category / subtitle</label><input type="text" data-k="subtitle"></div>
+      <div><label>School / organizer</label><input type="text" data-k="school"></div>
+      <div><label>Date</label><input type="text" data-k="date" placeholder="e.g. November 20, 2026"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Scoring</h2>
+    <p class="hint">Add one column per round or criterion. Total is computed automatically.</p>
+    <label>Rounds / criteria</label>
+    <div class="rounds" id="rounds"></div>
+    <div class="row" style="margin-top:10px"><button class="btn alt sm" id="addRound">+ Add round</button></div>
+    <div class="grid" style="margin-top:16px">
+      <div><label>Ranking order</label>
+        <select data-k="order"><option value="desc">Highest score wins</option><option value="asc">Lowest score wins (e.g. time)</option></select></div>
+      <div><label>Score unit (optional)</label><input type="text" data-k="unit" placeholder="e.g. points, words"></div>
+      <div><label>Contestant detail column</label><input type="text" data-k="groupLabel" placeholder="Grade & Section"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;justify-content:flex-end">
+        <label class="check"><input type="checkbox" data-k="useTB"> Use tie-breaker column</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border:2px solid var(--accent)">
+    <h2>Results status</h2>
+    <p class="hint">Use <b>Partial</b> while the competition is still going: slides show each contestant's scores only, with no ranks, medals, podium or winners.</p>
+    <div class="grid">
+      <div><label>Status</label>
+        <select data-k="status"><option value="final">Final results (show rankings & winners)</option><option value="partial">Partial results (scores only, no ranking)</option></select></div>
+      <div class="partialOpt"><label>Partial results label</label><input type="text" data-k="partialLabel" placeholder="e.g. Scores after Round 1"></div>
+      <div class="partialOpt"><label>List contestants by</label>
+        <label class="check" style="margin:0 0 8px"><input type="checkbox" data-k="partialRank"> Show rank numbers (when sorted by score)</label>
+        <select data-k="partialOrder"><option value="score">Highest to lowest score (partial ranking)</option><option value="alpha">Alphabetical (A–Z)</option><option value="entry">Entry order (as typed in Scores)</option></select></div>
+    </div>
+  </div>
+
+  <div class="card finalOpt">
+    <h2>Results display</h2>
+    <div class="grid">
+      <div><label>Winners to reveal</label>
+        <select data-k="topN"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>10</option></select></div>
+      <div><label>Award labels</label>
+        <select data-k="labelStyle">
+          <option value="placer">Champion · 2nd Placer · 3rd Placer</option>
+          <option value="runnerup">Champion · 1st Runner-Up · 2nd Runner-Up</option>
+          <option value="place">1st Place · 2nd Place · 3rd Place</option>
+          <option value="medal">Gold · Silver · Bronze</option>
+        </select></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label class="check"><input type="checkbox" data-k="showScores"> Show scores on slides</label>
+        <label class="check"><input type="checkbox" data-k="showBoard"> Include full ranking table</label>
+        <label class="check"><input type="checkbox" data-k="suspense"> Suspense reveal (click to show name)</label>
+      </div>
+    </div>
+    <label style="margin-top:16px">Theme</label>
+    <div class="themes" id="themes"></div>
+  </div>
+</section>
+
+<!-- SCORES -->
+<section id="scores" class="hidden">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <div><h2>Contestants & scores</h2><p class="hint" style="margin:0">Type scores — ranks update instantly. Ties share a rank.</p></div>
+      <div class="row">
+        <button class="btn alt sm" id="pasteBtn">📋 Paste from Excel</button>
+        <button class="btn alt sm" id="sortBtn">Sort by rank</button>
+        <button class="btn sm" id="addRow">+ Add contestant</button>
+      </div>
+    </div>
+    <div class="tablewrap"><table class="sc" id="sc"></table></div>
+  </div>
+</section>
+
+<!-- PRESENT -->
+<section id="present" class="hidden">
+  <div class="stagewrap" id="stagewrap">
+    <canvas id="stage" width="1920" height="1080"></canvas>
+    <canvas id="fx" width="1920" height="1080"></canvas>
+  </div>
+  <div class="ctrl">
+    <button class="btn alt" id="prev">◀ Back</button>
+    <span class="count" id="count">1 / 1</span>
+    <button class="btn gold" id="next">Next ▶</button>
+    <button class="btn alt" id="fs">⛶ Full screen</button>
+    <span style="color:var(--muted);font-size:12px">Keys: → / Space next · ← back · F full screen</span>
+  </div>
+  <div class="thumbs" id="thumbs"></div>
+</section>
+
+<!-- EXPORT -->
+<section id="export" class="hidden">
+  <div class="exp">
+    <div class="card" style="grid-column:1/-1;border:2px solid #7d2ae8">
+      <div class="row" style="justify-content:space-between">
+        <div><div class="ico">🎨</div><h2>Send to Canva</h2></div>
+        <button class="btn" id="xCanva" style="background:#7d2ae8">Send current results to Canva</button>
+      </div>
+      <p>Creates an editable Canva presentation from the current rankings using your connected Canva account. Scores changed? Click again for an updated version.</p>
+      <div id="canvaStatus" class="hidden" style="padding:12px 14px;border-radius:10px;background:#f3ecff;color:#3b1673;font-weight:600"></div>
+      <div id="canvaHist"></div>
+      <details style="color:var(--muted);font-size:13px"><summary style="cursor:pointer">Prefer to keep this app's exact design?</summary>
+        <ol class="steps"><li>Download the .pptx below</li><li>Canva → <b>Create a design → Import file</b></li><li>Pick the file — slides become editable Canva pages</li></ol></details>
+    </div>
+    <div class="card">
+      <div class="ico">📊</div><h2>PowerPoint (.pptx)</h2>
+      <p>Every slide with editable text — open in PowerPoint, Google Slides, or import into Canva.</p>
+      <button class="btn" id="xPptx">Download .pptx</button>
+    </div>
+    <div class="card">
+      <div class="ico">🖼️</div><h2>Slide images (.png)</h2>
+      <p>All slides as 1920×1080 PNGs in one .zip — great for Canva, Facebook posts, or a TV display.</p>
+      <div class="row"><button class="btn" id="xZip">Download all (.zip)</button><button class="btn alt" id="xCur">Current slide (.png)</button></div>
+    </div>
+    <div class="card">
+      <div class="ico">📄</div><h2>Results table (.csv)</h2>
+      <p>Rank, name, details and scores — opens in Excel, or use with Canva <b>Bulk Create</b> for certificates.</p>
+      <div class="row"><button class="btn" id="xCsv">Download .csv</button><button class="btn alt" id="xCopy">Copy table</button></div>
+    </div>
+    <div class="card">
+      <div class="ico">💾</div><h2>Backup</h2>
+      <p>Save everything to a file and load it later or on another computer.</p>
+      <div class="row"><button class="btn" id="xJson">Save backup</button><button class="btn alt" id="xLoad">Load backup</button><input type="file" id="loadFile" accept=".json" class="hidden"></div>
+    </div>
+    <div class="card">
+      <div class="ico">🧹</div><h2>Start over</h2>
+      <p>Load sample data to try it out, or clear everything for a new competition.</p>
+      <div class="row"><button class="btn alt" id="sample">Load sample</button><button class="btn danger" id="clear">Clear all</button></div>
+    </div>
+  </div>
+  <p id="dlnote" class="hint hidden" style="margin-top:14px;color:var(--danger)">Downloads aren't available in this view. Open this page on claude.ai to download files. You can still use “Copy table”.</p>
+</section>
+</main>
+
+<div class="modal" id="pasteModal"><div class="box">
+  <h2 style="margin-top:0">Paste from Excel</h2>
+  <p class="hint">Copy rows from Excel or Google Sheets and paste here. Column order: <b id="pasteOrder"></b>. One contestant per line.</p>
+  <textarea id="pasteArea" placeholder="Juan Dela Cruz	Grade 9 – Perseverance	18	9"></textarea>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <label class="check" style="margin-right:auto"><input type="checkbox" id="pasteReplace"> Replace current list</label>
+    <button class="btn alt" id="pasteCancel">Cancel</button><button class="btn" id="pasteOk">Add contestants</button>
+  </div>
+</div></div>
+
+<div class="modal" id="confirmModal"><div class="box">
+  <h2 style="margin-top:0" id="cfTitle">Are you sure?</h2><p class="hint" id="cfText"></p>
+  <div class="row" style="justify-content:flex-end"><button class="btn alt" id="cfNo">Cancel</button><button class="btn danger" id="cfYes">Yes, continue</button></div>
+</div></div>
+
+<div class="modal" id="authModal"><div class="box" style="max-width:420px">
+  <h2 style="margin:0 0 4px" id="authTitle">Sign in</h2>
+  <p class="hint" id="authHint">Sign in to save your competitions online.</p>
+  <button class="btn alt" id="authGoogle" style="width:100%;justify-content:center;margin-bottom:12px">
+    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+    Continue with Google</button>
+  <div style="text-align:center;color:var(--muted);font-size:12px;margin:4px 0 12px">— or use email —</div>
+  <form id="authForm">
+    <div id="nameRow" class="hidden" style="margin-bottom:10px"><label>Full name</label><input type="text" id="authName" autocomplete="name"></div>
+    <div style="margin-bottom:10px"><label>Email</label><input type="text" id="authEmail" autocomplete="email" inputmode="email"></div>
+    <div id="pwRow" style="margin-bottom:10px"><label>Password</label><input type="password" id="authPw" autocomplete="current-password"></div>
+    <div id="pw2Row" class="hidden" style="margin-bottom:10px"><label>Confirm password</label><input type="password" id="authPw2" autocomplete="new-password"></div>
+    <p id="authErr" style="color:var(--danger);font-weight:600;font-size:13px;min-height:18px;margin:4px 0"></p>
+    <button class="btn" type="submit" id="authSubmit" style="width:100%;justify-content:center">Sign in</button>
+  </form>
+  <div class="row" style="justify-content:space-between;margin-top:12px;font-size:13px">
+    <a href="#" id="authSwitch" style="color:var(--brand);font-weight:700">Create an account</a>
+    <a href="#" id="authForgot" style="color:var(--muted);font-weight:600">Forgot password?</a>
+  </div>
+  <div style="text-align:right;margin-top:10px"><button class="btn alt sm" id="authClose">Close</button></div>
+</div></div>
+<div id="toast"></div>
+
+<script>
+/* ================= STATE ================= */
+const THEMES = {
+  navy:   {name:'Navy & Gold',   bg:'#0c1a38', bg2:'#1d3570', accent:'#f5b301', text:'#ffffff', muted:'#b8c4e0', dark:true},
+  maroon: {name:'Maroon & Gold', bg:'#3d0a16', bg2:'#7a1830', accent:'#f2c14e', text:'#ffffff', muted:'#e8c5cc', dark:true},
+  emerald:{name:'Emerald',       bg:'#06302a', bg2:'#11604d', accent:'#ffd166', text:'#ffffff', muted:'#bfe3d6', dark:true},
+  royal:  {name:'Royal Purple',  bg:'#1f0e40', bg2:'#4a2390', accent:'#ffcf56', text:'#ffffff', muted:'#d3c6f0', dark:true},
+  sky:    {name:'Sky Blue',      bg:'#0b4f8a', bg2:'#22a0d8', accent:'#ffe066', text:'#ffffff', muted:'#d6ecfa', dark:true},
+  ivory:  {name:'Classic Ivory', bg:'#f6f1e4', bg2:'#ffffff', accent:'#b07d10', text:'#1d2233', muted:'#6a6f80', dark:false},
+};
+const MEDAL = ['#f5c542','#cfd6df','#d98c4a'];
+const uid = () => Math.random().toString(36).slice(2,9);
+
+function sampleState(){
+  const names=[['Andrea Villanueva','Grade 9 – Perseverance',[10,9],3],['Miguel Santos','Grade 8 – Integrity',[10,8],2],
+    ['Sofia Reyes','Grade 7 – Humility',[9,9],1],['Carlo Mendoza','Grade 9 – Perseverance',[8,9],0],
+    ['Bea Gonzales','Grade 8 – Integrity',[9,7],0],['Joshua Ramos','Grade 7 – Humility',[7,8],0],
+    ['Kyla Bautista','Grade 9 – Perseverance',[8,6],0],['Nathan Cruz','Grade 8 – Integrity',[6,7],0]];
+  return {
+    title:'Spelling Bee 2026', subtitle:'Grades 7–9 · Final Round', school:'Bright Beginners Academy, Inc.', date:'',
+    rounds:['Elimination','Final'], order:'desc', unit:'points', groupLabel:'Grade & Section', useTB:true,
+    topN:'3', labelStyle:'placer', showScores:true, showBoard:true, suspense:true, theme:'navy', status:'final', partialLabel:'Partial Results', partialOrder:'score', partialRank:true,
+    contestants:names.map(([name,group,scores,tb])=>({id:uid(),name,group,scores:scores.map(String),tb:tb?String(tb):''}))
+  };
+}
+function blankState(){
+  const s=sampleState(); s.title='Competition Title'; s.subtitle=''; s.contestants=[{id:uid(),name:'',group:'',scores:['',''],tb:''}];
+  return s;
+}
+let S;
+try{ S=JSON.parse(localStorage.getItem('rankingApp.v1')); }catch(e){ S=null; }
+if(!S||!Array.isArray(S.contestants)) S=sampleState();
+if(!S.status) S.status='final'; if(S.partialLabel===undefined) S.partialLabel='Partial Results'; if(!S.partialOrder) S.partialOrder='score'; if(S.partialRank===undefined) S.partialRank=true;
+const pRanked=()=>S.partialOrder==='score'&&S.partialRank;
+const isPartial=()=>S.status==='partial';
+function syncStatusUI(){ document.querySelectorAll('.partialOpt').forEach(e=>e.classList.toggle('hidden',!isPartial())); document.querySelectorAll('.finalOpt').forEach(e=>e.classList.toggle('hidden',isPartial()));
+  const b=document.getElementById('modeBadge'); if(b){ b.textContent=isPartial()?'PARTIAL · scores only':'FINAL · rankings'; b.style.background=isPartial()?'#ffe8a3':'#c9f2d9'; } }
+let saveT;
+function save(){ clearTimeout(saveT); saveT=setTimeout(()=>{ try{localStorage.setItem('rankingApp.v1',JSON.stringify(S));}catch(e){} },300); fbQueueSave(); }
+
+/* ================= RANKING ================= */
+const num = v => { const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
+function computeRanks(){
+  const list=S.contestants.filter(c=>c.name.trim()).map(c=>{
+    const vals=c.scores.slice(0,S.rounds.length).map(num);
+    const total=vals.reduce((a,b)=>a+(b||0),0);
+    return {...c,total:Math.round(total*100)/100,tbv:S.useTB?num(c.tb):null,hasScore:vals.some(v=>v!==null)};
+  });
+  const dir=S.order==='asc'?1:-1;
+  list.sort((a,b)=>{
+    if(a.hasScore!==b.hasScore) return a.hasScore?-1:1;
+    if(a.total!==b.total) return dir*(a.total-b.total);
+    if(S.useTB){ const ta=a.tbv??-Infinity, tb=b.tbv??-Infinity; if(ta!==tb) return tb-ta; }
+    return 0;
+  });
+  list.forEach((c,i)=>{
+    const p=list[i-1];
+    const same=p && p.total===c.total && (!S.useTB || (p.tbv??null)===(c.tbv??null));
+    c.rank= same?p.rank:i+1;
+  });
+  list.forEach(c=>{ c.tied=list.filter(o=>o.rank===c.rank).length>1; });
+  return list;
+}
+const ord = n => { const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); };
+function awardLabel(rank){
+  if(S.labelStyle==='placer') return rank===1?'Champion':ord(rank)+' Placer';
+  if(S.labelStyle==='runnerup') return rank===1?'Champion':ord(rank-1)+' Runner-Up';
+  if(S.labelStyle==='medal') return ['Gold','Silver','Bronze'][rank-1] ? ['Gold Medalist','Silver Medalist','Bronze Medalist'][rank-1] : ord(rank)+' Place';
+  return ord(rank)+' Place';
+}
+const fmtScore = c => (Number.isInteger(c.total)?c.total:c.total.toFixed(2).replace(/0+$/,''))+(S.unit?' '+S.unit:'');
+
+/* ================= SLIDES ================= */
+function partialList(){
+  const byId=Object.fromEntries(computeRanks().map(c=>[c.id,c]));
+  let L=S.contestants.filter(c=>c.name.trim()).map((c,i)=>({...byId[c.id],no:i+1}));
+  if(S.partialOrder==='alpha') L.sort((a,b)=>a.name.localeCompare(b.name));
+  if(S.partialOrder==='score'){ const order=computeRanks().map(c=>c.id); L.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id)); }
+  return L;
+}
+function buildSlides(){
+  if(isPartial()){ const L=partialList(), per=10, sl=[{type:'title'}]; for(let p=0;p*per<L.length;p++) sl.push({type:'scores',rows:L.slice(p*per,p*per+per),page:p,pages:Math.ceil(L.length/per)}); return sl; }
+  const R=computeRanks(); const slides=[{type:'title'}];
+  const winners=R.filter(c=>c.rank<=+S.topN);
+  for(let i=winners.length-1;i>=0;i--) slides.push({type:'place',c:winners[i]});
+  if(R.length) slides.push({type:'podium',R});
+  if(S.showBoard && R.length){ const per=10; for(let p=0;p*per<R.length;p++) slides.push({type:'board',rows:R.slice(p*per,p*per+per),page:p,pages:Math.ceil(R.length/per)}); }
+  return slides;
+}
+
+/* ================= CANVAS DRAWING (1920x1080) ================= */
+const W=1920,H=1080, F='Montserrat, Arial, sans-serif';
+const th = () => THEMES[S.theme]||THEMES.navy;
+function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; }
+
+function drawBg(ctx,opts={}){
+  const t=th();
+  const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,t.bg); g.addColorStop(1,t.bg2);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // rays
+  ctx.save(); ctx.translate(W/2,H*1.05);
+  for(let i=0;i<24;i++){ ctx.rotate(Math.PI/24); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-90,-1700); ctx.lineTo(90,-1700); ctx.closePath();
+    ctx.fillStyle=hexA(t.dark?'#ffffff':t.accent,t.dark?0.025:0.05); ctx.fill(); }
+  ctx.restore();
+  const rg=ctx.createRadialGradient(W/2,H*0.45,40,W/2,H*0.45,900); rg.addColorStop(0,hexA(t.accent,0.18)); rg.addColorStop(1,hexA(t.accent,0));
+  ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
+  // frame lines
+  ctx.strokeStyle=hexA(t.accent,0.55); ctx.lineWidth=3; ctx.strokeRect(36,36,W-72,H-72);
+  ctx.strokeStyle=hexA(t.accent,0.2); ctx.lineWidth=1.5; ctx.strokeRect(50,50,W-100,H-100);
+  if(!opts.noFooter){
+    ctx.fillStyle=t.muted; ctx.font=`600 24px ${F}`; ctx.textBaseline='alphabetic';
+    ctx.textAlign='left'; ctx.fillText(clip(ctx,S.school||'',820),90,1012);
+    ctx.textAlign='right'; ctx.fillText(clip(ctx,[S.title,S.subtitle].filter(Boolean).join(' · '),820),W-90,1012);
+  }
+}
+function clip(ctx,s,max){ if(ctx.measureText(s).width<=max) return s; while(s.length&&ctx.measureText(s+'…').width>max) s=s.slice(0,-1); return s+'…'; }
+function fit(ctx,text,maxW,size,weight,min=20){ let s=size; ctx.font=`${weight} ${s}px ${F}`; while(ctx.measureText(text).width>maxW && s>min){ s-=2; ctx.font=`${weight} ${s}px ${F}`; } return s; }
+function txt(ctx,text,x,y,size,weight,color,maxW,align='center'){ ctx.textAlign=align; ctx.textBaseline='middle'; ctx.fillStyle=color; const s=fit(ctx,text,maxW||W-200,size,weight); ctx.fillText(text,x,y); return s; }
+function spaced(ctx,text,x,y,size,weight,color,sp){ ctx.font=`${weight} ${size}px ${F}`; ctx.fillStyle=color; ctx.textBaseline='middle'; ctx.textAlign='left';
+  const chars=[...text]; const w=chars.reduce((a,ch)=>a+ctx.measureText(ch).width+sp,0)-sp; let cx=x-w/2; chars.forEach(ch=>{ctx.fillText(ch,cx,y);cx+=ctx.measureText(ch).width+sp;}); }
+function medal(ctx,x,y,r,rank){
+  const col=MEDAL[rank-1]||th().accent;
+  ctx.save();
+  // ribbons
+  ctx.fillStyle=hexA(th().accent,.9); ctx.beginPath(); ctx.moveTo(x-r*.55,y-r*.2); ctx.lineTo(x-r*.95,y+r*1.55); ctx.lineTo(x-r*.55,y+r*1.3); ctx.lineTo(x-r*.25,y+r*1.6); ctx.lineTo(x,y); ctx.fill();
+  ctx.fillStyle=hexA(th().accent,.7); ctx.beginPath(); ctx.moveTo(x+r*.55,y-r*.2); ctx.lineTo(x+r*.95,y+r*1.55); ctx.lineTo(x+r*.55,y+r*1.3); ctx.lineTo(x+r*.25,y+r*1.6); ctx.lineTo(x,y); ctx.fill();
+  const g=ctx.createRadialGradient(x-r*.35,y-r*.35,r*.1,x,y,r); g.addColorStop(0,'#ffffff'); g.addColorStop(.25,col); g.addColorStop(1,shade(col,-0.35));
+  ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=30; ctx.shadowOffsetY=10;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle=g; ctx.fill(); ctx.shadowColor='transparent';
+  ctx.lineWidth=r*.07; ctx.strokeStyle=shade(col,-0.2); ctx.beginPath(); ctx.arc(x,y,r*.82,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle=shade(col,-0.55); ctx.font=`900 ${r*.95}px ${F}`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(rank,x,y+r*.05);
+  ctx.restore();
+}
+function shade(hex,p){ const n=parseInt(hex.slice(1),16); let r=n>>16,g=(n>>8)&255,b=n&255; const f=v=>Math.max(0,Math.min(255,Math.round(p<0?v*(1+p):v+(255-v)*p))); return '#'+[f(r),f(g),f(b)].map(v=>v.toString(16).padStart(2,'0')).join(''); }
+
+function drawTitle(ctx){
+  const t=th(); drawBg(ctx,{noFooter:true});
+  spaced(ctx,(S.school||'').toUpperCase(),W/2,250,30,700,t.accent,6);
+  ctx.fillStyle=t.accent; ctx.fillRect(W/2-90,300,180,5);
+  txt(ctx,S.title||'Competition',W/2,450,140,900,t.text,1600);
+  if(S.subtitle) txt(ctx,S.subtitle,W/2,580,56,600,t.muted,1500);
+  spaced(ctx,isPartial()?(S.partialLabel||'Partial Results').toUpperCase():'OFFICIAL RESULTS',W/2,740,40,800,t.accent,isPartial()?10:14);
+  if(S.date) txt(ctx,S.date,W/2,830,32,500,t.muted,1200);
+}
+function drawPlace(ctx,c,hidden){
+  const t=th(); drawBg(ctx);
+  medal(ctx,W/2,250,120,c.rank);
+  spaced(ctx,awardLabel(c.rank).toUpperCase(),W/2,500,58,900,t.accent,10);
+  if(hidden){ txt(ctx,'? ? ?',W/2,680,150,900,hexA(t.text,.85)); txt(ctx,'Click Next to reveal',W/2,840,30,500,t.muted); return; }
+  txt(ctx,c.name,W/2,670,130,900,t.text,1650);
+  let y=790; if(c.group){ txt(ctx,c.group,W/2,y,46,600,t.muted,1500); y+=85; }
+  if(S.showScores){ ctx.font=`800 40px ${F}`; const s=fmtScore(c); const w=ctx.measureText(s).width+80;
+    ctx.fillStyle=hexA(t.accent,.18); roundRect(ctx,W/2-w/2,y-35,w,70,35); ctx.fill(); txt(ctx,s,W/2,y+2,40,800,t.accent); }
+}
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function podiumSlots(R){
+  // first entry of each rank 1..3 (ties: show first, others listed)
+  const top=R.filter(c=>c.rank<=3).slice(0,3);
+  return top;
+}
+function drawPodium(ctx,R){
+  const t=th(); drawBg(ctx);
+  spaced(ctx,'OUR WINNERS',W/2,120,52,900,t.accent,12);
+  const top=podiumSlots(R);
+  const pos=[{x:W/2,h:360},{x:W/2-470,h:260},{x:W/2+470,h:190}];
+  const base=950, bw=400;
+  top.forEach((c,i)=>{
+    const p=pos[i]; const col=MEDAL[c.rank-1]||t.accent; const y=base-p.h;
+    const g=ctx.createLinearGradient(0,y,0,base); g.addColorStop(0,col); g.addColorStop(1,shade(col,-0.4));
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=25; ctx.fillStyle=g; roundRect(ctx,p.x-bw/2,y,bw,p.h,16); ctx.fill(); ctx.restore();
+    ctx.fillStyle=hexA('#ffffff',.25); ctx.fillRect(p.x-bw/2+16,y+10,bw-32,8);
+    txt(ctx,String(c.rank),p.x,y+p.h/2-10,Math.min(150,p.h*.6),900,shade(col,-0.6));
+    txt(ctx,awardLabel(c.rank).toUpperCase(),p.x,y+p.h-32,24,800,shade(col,-0.6),bw-30);
+    // name stack
+    let ny=y-40;
+    if(S.showScores){ txt(ctx,fmtScore(c),p.x,ny,30,700,t.accent,bw+40); ny-=48; }
+    if(c.group){ txt(ctx,c.group,p.x,ny,28,500,t.muted,bw+60); ny-=50; }
+    const lines=wrap2(ctx,c.name,bw+80,52,800);
+    for(let k=lines.length-1;k>=0;k--){ txt(ctx,lines[k],p.x,ny,lines.size,800,t.text,bw+80); ny-=lines.size+8; }
+  });
+}
+function wrap2(ctx,text,maxW,size,weight){
+  ctx.font=`${weight} ${size}px ${F}`;
+  if(ctx.measureText(text).width<=maxW){ const a=[text]; a.size=size; return a; }
+  const words=text.split(' '); let best=null;
+  for(let i=1;i<words.length;i++){ const a=words.slice(0,i).join(' '), b=words.slice(i).join(' '); const m=Math.max(ctx.measureText(a).width,ctx.measureText(b).width); if(!best||m<best.m) best={a,b,m}; }
+  if(!best){ const a=[text]; a.size=fit(ctx,text,maxW,size,weight); return a; }
+  let s=size; while(s>24){ ctx.font=`${weight} ${s}px ${F}`; if(Math.max(ctx.measureText(best.a).width,ctx.measureText(best.b).width)<=maxW) break; s-=2; }
+  const r=[best.a,best.b]; r.size=s; return r;
+}
+function drawBoard(ctx,sl){
+  const t=th(); drawBg(ctx);
+  spaced(ctx,'FINAL RANKINGS',W/2,125,50,900,t.accent,12);
+  if(sl.pages>1) txt(ctx,`Page ${sl.page+1} of ${sl.pages}`,W/2,180,24,600,t.muted);
+  const x0=150,x1=W-150, top=220, rh=70;
+  const cols=S.showScores?{rank:x0+70,name:x0+170,group:x0+900,score:x1-90}:{rank:x0+70,name:x0+170,group:x0+1050};
+  ctx.fillStyle=hexA(t.text,.08); roundRect(ctx,x0,top,x1-x0,56,12); ctx.fill();
+  const hy=top+29; const hc=t.muted;
+  txt(ctx,'RANK',cols.rank,hy,22,800,hc,140);
+  txt(ctx,'NAME',cols.name,hy,22,800,hc,600,'left');
+  txt(ctx,(S.groupLabel||'Details').toUpperCase(),cols.group,hy,22,800,hc,600,'left');
+  if(S.showScores) txt(ctx,'SCORE',cols.score,hy,22,800,hc,200);
+  sl.rows.forEach((c,i)=>{
+    const y=top+72+i*rh;
+    if(c.rank<=3){ ctx.fillStyle=hexA(MEDAL[c.rank-1],.16); roundRect(ctx,x0,y,x1-x0,rh-8,12); ctx.fill(); }
+    else if(i%2===0){ ctx.fillStyle=hexA(t.text,.04); roundRect(ctx,x0,y,x1-x0,rh-8,12); ctx.fill(); }
+    const cy=y+(rh-8)/2;
+    if(c.rank<=3){ ctx.beginPath(); ctx.arc(cols.rank,cy,24,0,Math.PI*2); ctx.fillStyle=MEDAL[c.rank-1]; ctx.fill(); txt(ctx,String(c.rank),cols.rank,cy+1,26,900,shade(MEDAL[c.rank-1],-0.6)); }
+    else txt(ctx,String(c.rank),cols.rank,cy+1,28,800,t.text);
+    txt(ctx,c.name,cols.name,cy,32,700,t.text,(cols.group-cols.name)-40,'left');
+    txt(ctx,c.group||'',cols.group,cy,26,500,t.muted,(S.showScores?cols.score-120:x1-30)-cols.group,'left');
+    if(S.showScores) txt(ctx,fmtScore(c),cols.score,cy,30,800,t.accent,220);
+  });
+}
+const fmtNum=v=>{const n=num(v);return n===null?'—':String(n);};
+function scoreCols(){
+  const x0=150,x1=W-150, showR=S.rounds.length<=5, rw=150, tw=180;
+  const right=(showR?S.rounds.length*rw:0)+tw;
+  const nameX=x0+(pRanked()?140:40), groupX=nameX+Math.round((x1-right-nameX)*0.55);
+  const rx=S.rounds.map((_,j)=>x1-right+rw*j+rw/2);
+  return {x0,x1,showR,rw,tw,nameX,groupX,rx,totX:x1-tw/2,groupEnd:x1-right-20};
+}
+function drawScores(ctx,sl){
+  const t=th(); drawBg(ctx); const C=scoreCols();
+  spaced(ctx,(S.partialLabel||'Partial Results').toUpperCase(),W/2,118,46,900,t.accent,10);
+  txt(ctx,(pRanked()?'Partial ranking · not final':S.partialOrder==='score'?'Highest to lowest · not final':'Scores only · not final rankings')+(sl.pages>1?`  ·  Page ${sl.page+1} of ${sl.pages}`:''),W/2,176,24,600,t.muted);
+  const top=220, rh=70;
+  ctx.fillStyle=hexA(t.text,.08); roundRect(ctx,C.x0,top,C.x1-C.x0,56,12); ctx.fill();
+  const hy=top+29, hc=t.muted;
+  if(pRanked()) txt(ctx,'RANK',C.x0+65,hy,22,800,hc,110);
+  txt(ctx,'NAME',C.nameX,hy,22,800,hc,500,'left');
+  txt(ctx,(S.groupLabel||'Details').toUpperCase(),C.groupX,hy,22,800,hc,C.groupEnd-C.groupX,'left');
+  if(C.showR) S.rounds.forEach((r,j)=>txt(ctx,r.toUpperCase(),C.rx[j],hy,20,800,hc,C.rw-14));
+  txt(ctx,'TOTAL',C.totX,hy,22,800,t.accent,C.tw-10);
+  sl.rows.forEach((c,i)=>{
+    const y=top+72+i*rh, cy=y+(rh-8)/2;
+    if(i%2===0){ ctx.fillStyle=hexA(t.text,.05); roundRect(ctx,C.x0,y,C.x1-C.x0,rh-8,12); ctx.fill(); }
+    if(pRanked()) txt(ctx,c.hasScore?String(c.rank):'—',C.x0+65,cy+1,30,800,t.text,110);
+    txt(ctx,c.name,C.nameX,cy,32,700,t.text,C.groupX-C.nameX-30,'left');
+    txt(ctx,c.group||'',C.groupX,cy,26,500,t.muted,C.groupEnd-C.groupX,'left');
+    if(C.showR) S.rounds.forEach((_,j)=>txt(ctx,fmtNum(c.scores[j]),C.rx[j],cy+1,30,600,t.text,C.rw-14));
+    txt(ctx,c.hasScore?String(c.total)+(S.unit&&!C.showR?' '+S.unit:''):'—',C.totX,cy+1,32,800,t.accent,C.tw-10);
+  });
+}
+function drawSlide(ctx,sl,hidden){
+  ctx.clearRect(0,0,W,H);
+  if(sl.type==='title') drawTitle(ctx);
+  else if(sl.type==='place') drawPlace(ctx,sl.c,hidden);
+  else if(sl.type==='podium') drawPodium(ctx,sl.R);
+  else if(sl.type==='board') drawBoard(ctx,sl);
+  else if(sl.type==='scores') drawScores(ctx,sl);
+}
+
+/* ================= UI: SETUP ================= */
+function bindSetup(){
+  document.querySelectorAll('[data-k]').forEach(el=>{
+    const k=el.dataset.k;
+    if(el.type==='checkbox') el.checked=!!S[k]; else el.value=S[k]??'';
+    el.oninput=el.onchange=()=>{ S[k]=el.type==='checkbox'?el.checked:el.value; save(); if(k==='useTB'||k==='groupLabel'||k==='unit'||k==='order') renderTable(); if(k==='status') syncStatusUI(); };
+  });
+  renderRounds(); renderThemes(); syncStatusUI();
+}
+function renderRounds(){
+  const box=document.getElementById('rounds'); box.innerHTML='';
+  S.rounds.forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='r';
+    d.innerHTML=`<input type="text"><button class="x" title="Remove">×</button>`;
+    const inp=d.querySelector('input'); inp.value=r; inp.oninput=()=>{S.rounds[i]=inp.value;save();renderTable();};
+    d.querySelector('button').onclick=()=>{ if(S.rounds.length<=1) return toast('Keep at least one round.'); S.rounds.splice(i,1); S.contestants.forEach(c=>c.scores.splice(i,1)); save(); renderRounds(); renderTable(); };
+    box.appendChild(d);
+  });
+}
+document.getElementById('addRound').onclick=()=>{ S.rounds.push('Round '+(S.rounds.length+1)); S.contestants.forEach(c=>c.scores.push('')); save(); renderRounds(); renderTable(); };
+function renderThemes(){
+  const box=document.getElementById('themes'); box.innerHTML='';
+  Object.entries(THEMES).forEach(([k,t])=>{
+    const d=document.createElement('div'); d.className='sw'+(S.theme===k?' on':''); d.title=t.name;
+    d.style.background=`linear-gradient(135deg,${t.bg},${t.bg2})`; d.innerHTML=`<i style="background:${t.accent}"></i>`;
+    d.onclick=()=>{S.theme=k;save();renderThemes();}; box.appendChild(d);
+  });
+}
+
+/* ================= UI: SCORES ================= */
+function esc(s){ return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function renderTable(){
+  const tb=document.getElementById('sc');
+  const head=`<tr><th>#</th><th>Name</th><th>${esc(S.groupLabel||'Details')}</th>${S.rounds.map(r=>`<th style="text-align:center">${esc(r)}</th>`).join('')}${S.useTB?'<th style="text-align:center">Tie-breaker</th>':''}<th style="text-align:center">Total</th><th style="text-align:center">Rank</th><th></th></tr>`;
+  const rows=S.contestants.map((c,i)=>`<tr data-id="${c.id}"><td style="color:var(--muted)">${i+1}</td>
+    <td><input type="text" data-f="name" value="${esc(c.name)}" placeholder="Full name"></td>
+    <td><input type="text" data-f="group" value="${esc(c.group)}"></td>
+    ${S.rounds.map((r,j)=>`<td class="num"><input type="text" inputmode="decimal" data-f="s${j}" value="${esc(c.scores[j]??'')}"></td>`).join('')}
+    ${S.useTB?`<td class="num"><input type="text" inputmode="decimal" data-f="tb" value="${esc(c.tb)}"></td>`:''}
+    <td class="tot"></td><td class="rk"></td><td><button class="x" title="Remove">×</button></td></tr>`).join('');
+  tb.innerHTML=head+(rows||'');
+  tb.querySelectorAll('tr[data-id]').forEach(tr=>{
+    const c=S.contestants.find(x=>x.id===tr.dataset.id);
+    tr.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{
+      const f=inp.dataset.f; if(f[0]==='s'&&f!=='s') c.scores[+f.slice(1)]=inp.value; else c[f]=inp.value; save(); updateRanks();
+    });
+    tr.querySelector('.x').onclick=()=>{ S.contestants=S.contestants.filter(x=>x!==c); save(); renderTable(); };
+  });
+  updateRanks();
+}
+function updateRanks(){
+  const R=computeRanks(); const byId=Object.fromEntries(R.map(c=>[c.id,c]));
+  document.querySelectorAll('#sc tr[data-id]').forEach(tr=>{
+    const c=byId[tr.dataset.id];
+    tr.querySelector('.tot').textContent=c&&c.hasScore?c.total:'';
+    tr.querySelector('.rk').innerHTML=c&&c.hasScore?`<span class="pill ${c.rank<=3?'p'+c.rank:''}">${c.rank}</span>${c.tied?'<span class="tie">TIE</span>':''}`:'';
+  });
+}
+document.getElementById('addRow').onclick=()=>{ S.contestants.push({id:uid(),name:'',group:'',scores:S.rounds.map(()=>''),tb:''}); save(); renderTable();
+  const ins=document.querySelectorAll('#sc tr[data-id] input[data-f=name]'); ins[ins.length-1]?.focus(); };
+document.getElementById('sortBtn').onclick=()=>{ const R=computeRanks(); const order=R.map(c=>c.id); S.contestants.sort((a,b)=>{const ia=order.indexOf(a.id),ib=order.indexOf(b.id);return (ia<0?1e9:ia)-(ib<0?1e9:ib);}); save(); renderTable(); };
+
+/* paste */
+const pm=document.getElementById('pasteModal');
+document.getElementById('pasteBtn').onclick=()=>{ document.getElementById('pasteOrder').textContent=['Name',S.groupLabel||'Details',...S.rounds,...(S.useTB?['Tie-breaker']:[])].join(' → '); document.getElementById('pasteArea').value=''; pm.classList.add('show'); };
+document.getElementById('pasteCancel').onclick=()=>pm.classList.remove('show');
+document.getElementById('pasteOk').onclick=()=>{
+  const lines=document.getElementById('pasteArea').value.split(/\r?\n/).filter(l=>l.trim());
+  const add=lines.map(l=>{ const p=l.includes('\t')?l.split('\t'):l.split(/\s*[,;]\s*/); const n=S.rounds.length;
+    return {id:uid(),name:(p[0]||'').trim(),group:(p[1]||'').trim(),scores:S.rounds.map((_,j)=>(p[2+j]||'').trim()),tb:S.useTB?(p[2+n]||'').trim():''}; }).filter(c=>c.name);
+  if(!add.length) return toast('Nothing to add — check the pasted rows.');
+  if(document.getElementById('pasteReplace').checked) S.contestants=add; else S.contestants=S.contestants.filter(c=>c.name.trim()).concat(add);
+  save(); renderTable(); pm.classList.remove('show'); toast(`Added ${add.length} contestant${add.length>1?'s':''}.`);
+};
+
+/* ================= UI: PRESENT ================= */
+let slides=[], cur=0, hiddenStep=false;
+const stage=document.getElementById('stage'), sctx=stage.getContext('2d');
+function openPresent(){ slides=buildSlides(); if(cur>=slides.length) cur=0; hiddenStep=isSuspense(cur); renderThumbs(); show(); }
+function isSuspense(i){ return S.suspense && slides[i]?.type==='place'; }
+function show(){
+  fbPushLive();
+  stage.style.opacity=0;
+  setTimeout(()=>{ drawSlide(sctx,slides[cur],hiddenStep); stage.style.opacity=1;
+    document.getElementById('count').textContent=`${cur+1} / ${slides.length}`;
+    document.querySelectorAll('#thumbs canvas').forEach((c,i)=>c.classList.toggle('on',i===cur));
+    const sl=slides[cur]; if(sl.type==='place'&&!hiddenStep&&sl.c.rank===1) confetti(); else stopConfetti();
+  },120);
+}
+function next(){ if(DISPLAY_ID) return; if(hiddenStep){hiddenStep=false;show();return;} if(cur<slides.length-1){cur++;hiddenStep=isSuspense(cur);show();} }
+function prev(){ if(DISPLAY_ID) return; if(cur>0){cur--;hiddenStep=false;show();} }
+document.getElementById('next').onclick=next; document.getElementById('prev').onclick=prev;
+document.getElementById('stage').onclick=next;
+const sw=document.getElementById('stagewrap');
+document.getElementById('fs').onclick=()=>{ try{ (document.fullscreenElement?document.exitFullscreen():sw.requestFullscreen()).catch(()=>toast('Full screen is not available here.')); }catch(e){ toast('Full screen is not available here.'); } };
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('present').classList.contains('hidden')||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+  else if(e.key==='f'||e.key==='F') document.getElementById('fs').click();
+});
+function renderThumbs(){
+  const box=document.getElementById('thumbs'); box.innerHTML='';
+  slides.forEach((sl,i)=>{ const c=document.createElement('canvas'); c.width=480; c.height=270; const x=c.getContext('2d'); x.scale(.25,.25); drawSlide(x,sl,false);
+    c.onclick=()=>{cur=i;hiddenStep=isSuspense(i);show();}; box.appendChild(c); });
+}
+/* confetti */
+const fx=document.getElementById('fx'), fctx=fx.getContext('2d'); let parts=[], raf=null;
+function confetti(){
+  const cols=[th().accent,'#ffffff',MEDAL[0],'#ff6b6b','#4dabf7','#69db7c'];
+  parts=Array.from({length:260},()=>({x:Math.random()*W,y:-Math.random()*H*.8,vx:(Math.random()-.5)*6,vy:4+Math.random()*7,r:Math.random()*Math.PI,vr:(Math.random()-.5)*.3,w:10+Math.random()*14,h:6+Math.random()*10,c:cols[Math.floor(Math.random()*cols.length)]}));
+  cancelAnimationFrame(raf); let frames=0;
+  (function tick(){ fctx.clearRect(0,0,W,H); let alive=0;
+    parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.05; p.r+=p.vr; if(p.y<H+40){alive++; fctx.save(); fctx.translate(p.x,p.y); fctx.rotate(p.r); fctx.fillStyle=p.c; fctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); fctx.restore();} });
+    if(alive&&frames++<900) raf=requestAnimationFrame(tick); else fctx.clearRect(0,0,W,H); })();
+}
+function stopConfetti(){ cancelAnimationFrame(raf); fctx.clearRect(0,0,W,H); }
+
+/* ================= EXPORT ================= */
+let downloads=null;
+(async()=>{ try{ if(window.claude&&claude.use) downloads=await claude.use('downloads'); }catch(e){} })();
+async function saveFile(filename,data){
+  if(!downloads){ const blob=data instanceof Blob?data:new Blob([data]); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500); toast('Downloaded '+filename); return; }
+  try{ await downloads.save({filename,data}); toast('Saved '+filename); }
+  catch(e){ if(e&&e.code==='declined') return; if(e&&e.code==='rate_limited') return toast('Please finish the open download prompt first.'); toast('Could not save: '+(e&&e.message||e)); }
+}
+const slug=()=>(S.title||'results').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')||'results';
+function slideCanvas(sl){ const c=document.createElement('canvas'); c.width=W; c.height=H; drawSlide(c.getContext('2d'),sl,false); return c; }
+const toBlob=c=>new Promise(r=>c.toBlob(r,'image/png'));
+function slideName(sl,i){ return String(i+1).padStart(2,'0')+'_'+(sl.type==='scores'?'Scores'+(sl.pages>1?'_p'+(sl.page+1):''):sl.type==='place'?awardLabel(sl.c.rank).replace(/\s+/g,'_'):sl.type==='board'?'Rankings'+(sl.pages>1?'_p'+(sl.page+1):''):sl.type==='podium'?'Podium':'Title'); }
+
+document.getElementById('xCur').onclick=async()=>{ const sl=buildSlides(); const i=Math.min(cur,sl.length-1); const b=await toBlob(slideCanvas(sl[i])); saveFile(slug()+'_'+slideName(sl[i],i)+'.png',b); };
+document.getElementById('xZip').onclick=async()=>{
+  if(typeof JSZip==='undefined') return toast('Image tools are still loading — try again in a moment.');
+  toast('Preparing images…'); const sl=buildSlides(); const z=new JSZip();
+  for(let i=0;i<sl.length;i++){ z.file(slideName(sl[i],i)+'.png',await toBlob(slideCanvas(sl[i]))); }
+  saveFile(slug()+'_slides.zip',await z.generateAsync({type:'blob'}));
+};
+function csvRows(){
+  if(isPartial()){ const L=partialList(); const RK=pRanked(); return [[...(RK?['Rank']:[]),'Name',S.groupLabel||'Details',...S.rounds,'Total'],...L.map(c=>[...(RK?[c.hasScore?c.rank:'']:[]),c.name,c.group,...S.rounds.map((_,j)=>c.scores[j]??''),c.hasScore?c.total:''])]; }
+  const R=computeRanks(); const head=['Rank','Award','Name',S.groupLabel||'Details',...S.rounds,...(S.useTB?['Tie-breaker']:[]),'Total'];
+  return [head,...R.map(c=>[c.rank,c.rank<=+S.topN?awardLabel(c.rank):'',c.name,c.group,...S.rounds.map((_,j)=>c.scores[j]??''),...(S.useTB?[c.tb]:[]),c.total])]; }
+document.getElementById('xCsv').onclick=()=>{ const csv=csvRows().map(r=>r.map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\r\n'); saveFile(slug()+'_results.csv','﻿'+csv); };
+document.getElementById('xCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(csvRows().map(r=>r.join('\t')).join('\n')); toast('Copied — paste into Excel or Sheets.'); }catch(e){ toast('Copy was blocked by the browser.'); } };
+document.getElementById('xJson').onclick=()=>saveFile(slug()+'_backup.json',JSON.stringify(S,null,2));
+document.getElementById('xLoad').onclick=()=>document.getElementById('loadFile').click();
+document.getElementById('loadFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); if(!Array.isArray(d.contestants)||!Array.isArray(d.rounds)) throw 0; S=d; save(); bindSetup(); renderTable(); toast('Backup loaded.'); }catch(err){ toast('That file is not a valid backup.'); } e.target.value=''; };
+document.getElementById('sample').onclick=()=>confirmBox('Load sample data?','This replaces your current competition and scores.',()=>{S=sampleState();save();bindSetup();renderTable();toast('Sample loaded.');});
+document.getElementById('clear').onclick=()=>confirmBox('Clear everything?','All contestants and scores will be removed. Save a backup first if you need it.',()=>{S=blankState();save();bindSetup();renderTable();toast('Cleared.');});
+
+/* ---- SEND TO CANVA (viewer's Canva connector) ---- */
+let mcp=null;
+(async()=>{ try{ if(window.claude&&claude.use) mcp=await claude.use('mcp'); }catch(e){} renderCanvaHist(); if(!mcp) canvaMsg('Send to Canva works only when the app is opened inside claude.ai. Here, use Download .pptx and import it into Canva.',true); })();
+function canvaMsg(html,warn){ const el=document.getElementById('canvaStatus'); el.classList.remove('hidden'); el.style.background=warn?'#fdecea':'#f3ecff'; el.style.color=warn?'#8a1f11':'#3b1673'; el.innerHTML=html; }
+function findKey(o,keys,depth=0){ if(!o||typeof o!=='object'||depth>6) return undefined; for(const k of keys) if(o[k]!==undefined&&o[k]!==null&&typeof o[k]!=='object') return o[k];
+  for(const v of Object.values(o)){ const r=findKey(v,keys,depth+1); if(r!==undefined) return r; } return undefined; }
+function findCanvaUrl(o){ const s=typeof o==='string'?o:JSON.stringify(o||''); const m=s.match(/https:\/\/(?:www\.)?canva\.com\/design\/[^\s"'\\)]+/); return m?m[0]:null; }
+function canvaBriefPartial(){
+  const t=th(), L=partialList();
+  const brief=[`Partial (not final) score update for "${S.title}"${S.subtitle?' — '+S.subtitle:''}${S.school?', '+S.school:''}${S.date?', '+S.date:''}`.replace(/\.*$/,'.'),
+    `Label it "${S.partialLabel||'Partial Results'}". Clean scoreboard style. Colours: ${t.name} (background ${t.bg}, accent ${t.accent}).`,
+    S.partialOrder==='score'
+      ? `IMPORTANT: this is a PARTIAL ranking from highest to lowest score, not final. ${pRanked()?'Show the rank number given for each contestant. ':''}Do not use medals, trophies, podiums or words like winner or champion. Keep contestants in exactly the order given and use every name, rank and score exactly as written.`
+      : `IMPORTANT: this is NOT a ranking. Do not rank, sort by score, number by place, highlight leaders, or use medals, trophies, podiums or words like winner, champion, leading or 1st place. Keep contestants in exactly the order given and use every name and score exactly as written.`].join(' ');
+  const line=c=>`${pRanked()&&c.hasScore?'Rank '+c.rank+' – ':''}${c.name}${c.group?' ('+c.group+')':''}: `+S.rounds.map((r,j)=>`${r} ${fmtNum(c.scores[j])}`).join(', ')+`, Total ${c.hasScore?c.total:'—'}`;
+  const sections=[{title:S.title||'Competition',description:`Title slide. ${[S.subtitle,S.school,S.date].filter(Boolean).join(' · ')} · ${S.partialLabel||'Partial Results'} (scores only, not final)`}];
+  for(let p=0;p*12<L.length;p++) sections.push({title:(S.partialLabel||'Partial Results')+(L.length>12?` (${p+1})`:''),description:(S.partialOrder==='score'?'Partial ranking table, highest to lowest, in the exact order given. Columns: '+(pRanked()?'Rank, ':''):'Score table in the exact order given (not ranked). Columns: ')+'Name, '+(S.groupLabel||'Details')+', '+S.rounds.join(', ')+', Total.',points:L.slice(p*12,p*12+12).map(line)});
+  return {brief,sections,count:L.length};
+}
+function canvaBrief(){
+  if(isPartial()) return canvaBriefPartial();
+  const t=th(), R=computeRanks().filter(c=>c.hasScore), winners=R.filter(c=>c.rank<=+S.topN);
+  const line=c=>`${c.name}${c.group?' ('+c.group+')':''}${S.showScores?' with '+fmtScore(c):''}`;
+  const brief=[`Official results presentation for "${S.title}"${S.subtitle?' — '+S.subtitle:''}${S.school?', '+S.school:''}${S.date?', '+S.date:''}`.replace(/\.*$/,'.'),
+    `Celebratory awards-ceremony style with trophies, medals and confetti accents. Colours: ${t.name} (background ${t.bg}, accent ${t.accent}).`,
+    `IMPORTANT: use every name, rank, award title and score exactly as written in the outline. Do not invent, change, re-order or add contestants or scores.`].join(' ');
+  const sections=[{title:S.title||'Competition Results',description:`Title slide. ${[S.subtitle,S.school,S.date].filter(Boolean).join(' · ')} · Official Results`}];
+  for(let i=winners.length-1;i>=0;i--){ const c=winners[i]; sections.push({title:awardLabel(c.rank),description:`Winner reveal slide: ${awardLabel(c.rank)} (Rank ${c.rank}) is ${line(c)}.`,points:[c.name,...(c.group?[c.group]:[]),...(S.showScores?[fmtScore(c)]:[])]}); }
+  if(winners.length) sections.push({title:'Our Winners',description:'Podium slide with the top three.',points:R.filter(c=>c.rank<=3).slice(0,3).map(c=>`${awardLabel(c.rank)}: ${line(c)}`)});
+  if(S.showBoard){ for(let p=0;p*12<R.length;p++) sections.push({title:'Final Rankings'+(R.length>12?` (${p+1})`:''),description:'Ranking table, one row per contestant: Rank, Name, '+(S.groupLabel||'Details')+(S.showScores?', Score':''),
+    points:R.slice(p*12,p*12+12).map(c=>`${c.rank}. ${line(c)}`)}); }
+  return {brief,sections,count:R.length};
+}
+let canvaBusy=false;
+document.getElementById('xCanva').onclick=async()=>{
+  if(canvaBusy) return;
+  if(!mcp) return canvaMsg('Send to Canva works when this page is opened on claude.ai with your Canva connector.',true);
+  const {brief,sections,count}=canvaBrief();
+  if(!count) return canvaMsg('Add contestants with scores first (tab 2 · Scores).',true);
+  canvaBusy=true; const btn=document.getElementById('xCanva'); btn.disabled=true; btn.style.opacity=.6;
+  const intent=isPartial()?`Create a Canva presentation of partial (unranked) scores for ${S.title}`:`Create a Canva presentation of the ${S.title} competition rankings`;
+  try{
+    canvaMsg('⏳ Sending results to Canva…');
+    let r=(await mcp.callTool('Canva','create-design',{brief,format:'Presentation',outline:{sections},user_intent:intent})).payload;
+    const job=findKey(r,['job_id','jobId']); let token=findKey(r,['continuation_token']); let url=findCanvaUrl(r);
+    const t0=Date.now();
+    while(!url && job && token && Date.now()-t0<6*60*1000){
+      const status=String(findKey(r,['status','state'])||'').toLowerCase();
+      if(/fail|error|cancel/.test(status)) throw {code:'tool_error',message:findKey(r,['message','error','reason'])||'Canva could not create the design.'};
+      const wait=Math.min(30,Math.max(3,+findKey(r,['wait_seconds'])||5));
+      canvaMsg(`⏳ Canva is designing your slides… (${Math.round((Date.now()-t0)/1000)}s) — keep this tab open.`);
+      await new Promise(res=>setTimeout(res,wait*1000));
+      r=(await mcp.callTool('Canva','get-create-design-async-job',{job_id:String(job),continuation_token:String(token),user_intent:intent})).payload;
+      token=findKey(r,['continuation_token'])||token; url=findCanvaUrl(r);
+    }
+    if(!url) throw {code:'no_url',message:'Canva did not return a design link in time. Check your Canva home page — the design may still appear there.'};
+    const stamp=new Date().toLocaleString();
+    S.canvaLinks=[{url,at:stamp,title:S.title}, ...(S.canvaLinks||[])].slice(0,5); save(); renderCanvaHist();
+    canvaMsg(`✅ Done! <a href="${esc(url)}" target="_blank" rel="noopener" style="color:#7d2ae8">Open in Canva →</a> Double-check names and scores before presenting.`);
+  }catch(e){
+    const c=e&&e.code, s='Canva';
+    const msg={needs_reauth:`Your ${s} connection expired. Reconnect ${s} in claude.ai Settings → Connectors, then try again.`,
+      server_not_connected:`Canva isn't connected. Add Canva in claude.ai Settings → Connectors, then try again.`,
+      selection_required:'Choose which Canva account to use in the prompt claude.ai shows, then try again.',
+      approval_required:'Canva needs your approval. Click the button again and choose Allow.',
+      not_in_manifest:'Canva access is turned off for this page. Allow it in the page settings, then try again.',
+      blocked_by_policy:'Your organization blocks this Canva action.',
+      server_unavailable:'Canva is busy right now. Check your Canva home first (the design may have been made), then try again.',
+      upstream_error:'Something went wrong talking to Canva. Check your Canva home first, then try again.'}[c];
+    canvaMsg('⚠️ '+esc(msg||(e&&e.message)||'Could not send to Canva.'),true);
+  }finally{ canvaBusy=false; btn.disabled=false; btn.style.opacity=1; }
+};
+function renderCanvaHist(){ const h=document.getElementById('canvaHist'); const L=S.canvaLinks||[]; h.innerHTML=L.length?'<p style="margin:4px 0;font-weight:700;color:var(--ink)">Recent Canva versions</p>'+L.map(l=>`<div style="font-size:13px"><a href="${esc(l.url)}" target="_blank" rel="noopener" style="color:#7d2ae8;font-weight:700">${esc(l.title||'Results')}</a> <span style="color:var(--muted)">· ${esc(l.at)}</span></div>`).join(''):''; }
+
+/* ---- PPTX (editable) ---- */
+function bgOnly(sl){ const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); drawBg(x,{noFooter:true});
+  if(sl&&sl.type==='place'){ medal(x,W/2,250,120,sl.c.rank); } return c.toDataURL('image/jpeg',0.88); }
+const IN=v=>v/192; const hx=c=>c.replace('#','');
+document.getElementById('xPptx').onclick=async()=>{
+  if(typeof PptxGenJS==='undefined') return toast('PowerPoint tools are still loading — try again in a moment.');
+  toast('Building PowerPoint…');
+  const t=th(), sl=buildSlides(), p=new PptxGenJS(); p.layout='LAYOUT_16x9'; p.title=S.title||'Results';
+  const HF='Arial Black', BF='Arial', bgPlain=bgOnly(null);
+  const T=(s,text,x,y,w,h,o={})=>s.addText(text,{x:IN(x),y:IN(y),w:IN(w),h:IN(h),align:'center',valign:'middle',fontFace:BF,color:hx(t.text),fit:'shrink',margin:0,...o});
+  const footer=s=>{ T(s,S.school||'',90,990,820,44,{align:'left',fontSize:11,color:hx(t.muted)}); T(s,[S.title,S.subtitle].filter(Boolean).join(' · '),W-910,990,820,44,{align:'right',fontSize:11,color:hx(t.muted)}); };
+  for(const s of sl){
+    const slide=p.addSlide();
+    if(s.type==='title'){
+      slide.background={data:bgPlain};
+      T(slide,(S.school||'').toUpperCase(),160,220,1600,60,{fontSize:15,bold:true,color:hx(t.accent),charSpacing:4});
+      slide.addShape(p.ShapeType.rect,{x:IN(W/2-90),y:IN(298),w:IN(180),h:IN(5),fill:{color:hx(t.accent)},line:{color:hx(t.accent)}});
+      T(slide,S.title||'Competition',120,360,1680,180,{fontFace:HF,fontSize:60});
+      if(S.subtitle) T(slide,S.subtitle,160,545,1600,80,{fontSize:26,color:hx(t.muted),bold:true});
+      T(slide,isPartial()?(S.partialLabel||'Partial Results').toUpperCase():'OFFICIAL RESULTS',160,705,1600,70,{fontSize:20,bold:true,color:hx(t.accent),charSpacing:isPartial()?5:8});
+      if(S.date) T(slide,S.date,160,800,1600,60,{fontSize:16,color:hx(t.muted)});
+    } else if(s.type==='place'){
+      const c=s.c; slide.background={data:bgOnly(s)};
+      T(slide,awardLabel(c.rank).toUpperCase(),160,450,1600,100,{fontFace:HF,fontSize:30,color:hx(t.accent),charSpacing:5});
+      T(slide,c.name,120,590,1680,160,{fontFace:HF,fontSize:58});
+      let y=760; if(c.group){ T(slide,c.group,160,y,1600,70,{fontSize:22,color:hx(t.muted),bold:true}); y+=85; }
+      if(S.showScores) T(slide,fmtScore(c),760,y,400,64,{fontSize:20,bold:true,color:hx(t.accent),shape:p.ShapeType.roundRect,rectRadius:0.17,fill:{color:hx(t.accent),transparency:82}});
+      footer(slide);
+    } else if(s.type==='podium'){
+      slide.background={data:bgPlain};
+      T(slide,'OUR WINNERS',160,80,1600,90,{fontFace:HF,fontSize:26,color:hx(t.accent),charSpacing:6});
+      const pos=[{x:W/2,h:360},{x:W/2-470,h:260},{x:W/2+470,h:190}], base=950, bw=400;
+      podiumSlots(s.R).forEach((c,i)=>{
+        const q=pos[i], col=MEDAL[c.rank-1]||t.accent, y=base-q.h;
+        slide.addShape(p.ShapeType.roundRect,{x:IN(q.x-bw/2),y:IN(y),w:IN(bw),h:IN(q.h),rectRadius:0.08,fill:{color:hx(col)},line:{color:hx(col)}});
+        T(slide,String(c.rank),q.x-bw/2,y+10,bw,q.h-70,{fontFace:HF,fontSize:Math.min(60,q.h/6),color:hx(shade(col,-0.6))});
+        T(slide,awardLabel(c.rank).toUpperCase(),q.x-bw/2,y+q.h-60,bw,50,{fontSize:11,bold:true,color:hx(shade(col,-0.6))});
+        const lines=[{text:c.name,options:{fontFace:HF,fontSize:22,color:hx(t.text),breakLine:true}}];
+        if(c.group) lines.push({text:c.group,options:{fontSize:13,color:hx(t.muted),breakLine:true}});
+        if(S.showScores) lines.push({text:fmtScore(c),options:{fontSize:14,bold:true,color:hx(t.accent)}});
+        T(slide,lines,q.x-bw/2-50,y-230,bw+100,215,{valign:'bottom',fit:'shrink'});
+      });
+      footer(slide);
+    } else if(s.type==='scores'){
+      slide.background={data:bgPlain}; const C=scoreCols();
+      T(slide,(S.partialLabel||'Partial Results').toUpperCase(),160,75,1600,90,{fontFace:HF,fontSize:22,color:hx(t.accent),charSpacing:5});
+      T(slide,(pRanked()?'Partial ranking · not final':S.partialOrder==='score'?'Highest to lowest · not final':'Scores only · not final rankings')+(s.pages>1?`  ·  Page ${s.page+1} of ${s.pages}`:''),160,155,1600,40,{fontSize:11,color:hx(t.muted)});
+      const RK=pRanked(); const hdr=[...(RK?['RANK']:[]),'NAME',(S.groupLabel||'Details').toUpperCase(),...(C.showR?S.rounds.map(r=>r.toUpperCase()):[]),'TOTAL'];
+      const hfill={color:hx(t.dark?shade(t.bg,0.12):shade(t.bg,-0.06))};
+      const rows=[hdr.map((h,j)=>({text:h,options:{bold:true,fontSize:9,color:hx(j===hdr.length-1?t.accent:t.muted),fill:hfill,align:(j===(RK?1:0)||j===(RK?2:1))?'left':'center'}}))];
+      s.rows.forEach((c,i)=>{ const fill=i%2===0?{fill:{color:hx(t.dark?shade(t.bg,0.06):shade(t.bg,-0.03))}}:{}; const b={fontSize:14,color:hx(t.text),...fill};
+        rows.push([...(RK?[{text:c.hasScore?String(c.rank):'—',options:{...b,bold:true,align:'center'}}]:[]),{text:c.name,options:{...b,bold:true}},{text:c.group||'',options:{...b,fontSize:12,color:hx(t.muted)}},
+          ...(C.showR?S.rounds.map((_,j)=>({text:fmtNum(c.scores[j]),options:{...b,align:'center'}})):[]),
+          {text:c.hasScore?String(c.total):'—',options:{...b,bold:true,align:'center',color:hx(t.accent)}}]); });
+      const tw=IN(W-300), rws=C.showR?S.rounds.length*1.05:0, totw=0.95, nw=0.6, rest=tw-rws-totw;
+      slide.addTable(rows,{x:IN(150),y:IN(215),w:tw,colW:[...(RK?[0.8]:[]),(rest-(RK?0.8:0))*0.55,(rest-(RK?0.8:0))*0.45,...(C.showR?S.rounds.map(()=>1.05):[]),totw],rowH:0.34,fontFace:BF,valign:'middle',border:{type:'none'},margin:[0,0.1,0,0.1]});
+      footer(slide);
+    } else if(s.type==='board'){
+      slide.background={data:bgPlain};
+      T(slide,'FINAL RANKINGS',160,80,1600,90,{fontFace:HF,fontSize:24,color:hx(t.accent),charSpacing:6});
+      if(s.pages>1) T(slide,`Page ${s.page+1} of ${s.pages}`,160,160,1600,40,{fontSize:11,color:hx(t.muted)});
+      const hdr=['RANK','NAME',(S.groupLabel||'Details').toUpperCase(),...(S.showScores?['SCORE']:[])];
+      const hopt={bold:true,fontSize:11,color:hx(t.muted),fill:{color:hx(t.dark?shade(t.bg,0.12):shade(t.bg,-0.06))}};
+      const rows=[hdr.map((h,j)=>({text:h,options:{...hopt,align:j===0||j===3?'center':'left'}}))];
+      s.rows.forEach((c,i)=>{
+        const fill=c.rank<=3?{color:hx(MEDAL[c.rank-1]),transparency:78}:(i%2===0?{color:hx(t.dark?shade(t.bg,0.06):shade(t.bg,-0.03))}:undefined);
+        const base={fontSize:15,color:hx(t.text),...(fill?{fill}:{})};
+        rows.push([{text:String(c.rank),options:{...base,bold:true,align:'center'}},{text:c.name,options:{...base,bold:true}},{text:c.group||'',options:{...base,fontSize:13,color:hx(t.muted)}},
+          ...(S.showScores?[{text:fmtScore(c),options:{...base,bold:true,align:'center',color:hx(t.accent)}}]:[])]);
+      });
+      const tw=IN(W-300); const cw=S.showScores?[1.0,tw-1.0-3.2-1.6,3.2,1.6]:[1.0,tw-1.0-4.0,4.0];
+      slide.addTable(rows,{x:IN(150),y:IN(215),w:tw,colW:cw,rowH:0.34,fontFace:BF,valign:'middle',border:{type:'none'},margin:[0,0.1,0,0.1]});
+      footer(slide);
+    }
+  }
+  try{ const blob=await p.write({outputType:'blob'}); saveFile(slug()+'_results.pptx',blob); }catch(e){ toast('Could not build the PowerPoint: '+e.message); }
+};
+
+/* ================= MISC ================= */
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2600); }
+function confirmBox(title,text,yes){ const m=document.getElementById('confirmModal'); document.getElementById('cfTitle').textContent=title; document.getElementById('cfText').textContent=text; m.classList.add('show');
+  document.getElementById('cfNo').onclick=()=>m.classList.remove('show'); document.getElementById('cfYes').onclick=()=>{m.classList.remove('show');yes();}; }
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['setup','scores','present','export'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab));
+  if(b.dataset.tab==='present') openPresent(); else stopConfetti();
+  if(b.dataset.tab==='scores') renderTable();
+  if(b.dataset.tab==='export') cur=Math.min(cur,buildSlides().length-1);
+});
+
+bindSetup(); renderTable();
+
+/* ================= FIREBASE ================= */
+// 1) Paste your Firebase web app config here (Firebase console → Project settings → Your apps → Web app).
+const firebaseConfig = {
+  apiKey: "AIzaSyAiIzGziu_tRoJRlw_Wc8H-p3jcif6VrNc",
+  authDomain: "ranking-result-tracking.firebaseapp.com",
+  projectId: "ranking-result-tracking",
+  storageBucket: "ranking-result-tracking.firebasestorage.app",
+  messagingSenderId: "96581850073",
+  appId: "1:96581850073:web:9c1d66d3c7e6ffc3b1ffc8"
+};
+const FB_OK = typeof firebase!=='undefined' && firebaseConfig.apiKey && !/^PASTE/.test(firebaseConfig.apiKey);
+const CLIENT = Math.random().toString(36).slice(2);
+const params = new URLSearchParams(location.search);
+const DISPLAY_ID = params.get('display');
+let wasSignedIn=false, fauth=null, fdb=null, user=null, compId=null, unsub=null, myComps=[], fbSaveT=null, liveT=null, publicFlag=false;
+const compsRef = () => fdb.collection('competitions');
+function setSync(t){ const e=document.getElementById('syncState'); if(e) e.textContent=t; }
+function plainState(){ return JSON.parse(JSON.stringify(S)); }
+
+function fbQueueSave(){
+  if(!fdb||!user||!compId||DISPLAY_ID) return;
+  setSync('Saving…'); clearTimeout(fbSaveT);
+  fbSaveT=setTimeout(async()=>{
+    try{ await compsRef().doc(compId).set({owner:user.uid,title:S.title||'Untitled',state:plainState(),writer:CLIENT,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      try{localStorage.setItem('rankingApp.localOwner',user.uid);}catch(_){} setSync('Saved online ✓'); const c=myComps.find(x=>x.id===compId); if(c&&c.title!==S.title){ c.title=S.title; renderAcct(); } }
+    catch(e){ setSync('⚠️ Not saved: '+(e.code||e.message)); }
+  },700);
+}
+function fbPushLive(){
+  if(!fdb||!user||!compId||DISPLAY_ID) return;
+  if(document.getElementById('present').classList.contains('hidden')) return;
+  clearTimeout(liveT);
+  liveT=setTimeout(()=>{ compsRef().doc(compId).set({live:{slide:cur,hidden:!!hiddenStep,writer:CLIENT}},{merge:true}).catch(()=>{}); },150);
+}
+function applyRemote(d){
+  if(!d||!d.state) return;
+  S=d.state; publicFlag=!!d.public;
+  try{localStorage.setItem('rankingApp.v1',JSON.stringify(S)); if(user) localStorage.setItem('rankingApp.localOwner',user.uid);}catch(e){}
+  const active=document.activeElement;
+  bindSetup(); if(!(active&&active.closest&&active.closest('#sc'))) renderTable(); else updateRanks();
+  if(!document.getElementById('present').classList.contains('hidden')){ slides=buildSlides(); if(cur>=slides.length) cur=slides.length-1; renderThumbs(); drawSlide(sctx,slides[cur],hiddenStep); }
+  renderAcct();
+}
+function openComp(id){
+  if(unsub) unsub(); compId=id;
+  try{ localStorage.setItem('rankingApp.comp.'+user.uid,id); }catch(e){}
+  setSync('Loading…');
+  unsub=compsRef().doc(id).onSnapshot(snap=>{
+    if(!snap.exists){ setSync('This competition was deleted.'); return; }
+    const d=snap.data(); publicFlag=!!d.public;
+    if(snap.metadata.hasPendingWrites || d.writer===CLIENT){ renderAcct(); setSync('Saved online ✓'); return; }
+    applyRemote(d); setSync('Synced ✓');
+  },err=>setSync('⚠️ '+err.code));
+  renderAcct();
+}
+async function loadMyComps(){
+  setSync('Loading…');
+  const q=await compsRef().where('owner','==',user.uid).get();
+  myComps=q.docs.map(d=>({id:d.id,title:(d.data().title||'Untitled'),t:d.data().updatedAt?d.data().updatedAt.toMillis():0})).sort((a,b)=>b.t-a.t);
+  if(!myComps.length){
+    let owner=null; try{ owner=localStorage.getItem('rankingApp.localOwner'); }catch(e){}
+    const hasLocal=S.contestants.some(c=>c.name.trim());
+    if(hasLocal && !owner){
+      await newComp(false);  // start clean, then ask
+      return confirmBox('Save your work to this account?','You made “'+(JSON.parse(localStorage.getItem('rankingApp.pending')||'{}').title||'a competition')+'” on this device before signing in. Add it to your account?',async()=>{
+        try{ const st=JSON.parse(localStorage.getItem('rankingApp.pending')); if(st){ S=st; bindSetup(); renderTable(); fbQueueSave(); toast('Added to your account.'); } }catch(e){} });
+    }
+    await newComp(false); return;
+  }
+  let last=null; try{ last=localStorage.getItem('rankingApp.comp.'+user.uid); }catch(e){}
+  openComp(myComps.find(c=>c.id===last)?last:myComps[0].id);
+}
+async function newComp(useCurrent){
+  const st=useCurrent?plainState():JSON.parse(JSON.stringify(blankState()));
+  const ref=await compsRef().add({owner:user.uid,title:st.title||'Untitled',state:st,public:false,writer:CLIENT,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  myComps.unshift({id:ref.id,title:st.title||'Untitled',t:Date.now()});
+  if(!useCurrent){ S=st; bindSetup(); renderTable(); }
+  openComp(ref.id); toast(useCurrent?'Your competition is now saved online.':'New competition created.');
+}
+function displayUrl(){ return location.origin+location.pathname+'?display='+compId; }
+function renderAcct(){
+  const b=document.getElementById('acctBody');
+  if(DISPLAY_ID) return;
+  if(!FB_OK){ b.innerHTML='⚠️ Firebase is not set up yet — your work is saved on this device only. (Paste your config in <b>index.html</b>.)'; return; }
+  if(!user){ b.innerHTML='<button class="btn sm" id="signIn">Sign in</button> <button class="btn alt sm" id="signUp">Create account</button> <span style="color:var(--muted)">to save your competitions online and use the live display link</span>';
+    document.getElementById('signIn').onclick=()=>openAuth('signin'); document.getElementById('signUp').onclick=()=>openAuth('signup'); return; }
+  b.innerHTML=`<span class="who">${user.photoURL?`<img src="${esc(user.photoURL)}" alt="">`:''}${esc(user.displayName||user.email)}</span>
+    <select id="compSel">${myComps.map(c=>`<option value="${c.id}" ${c.id===compId?'selected':''}>${esc(c.title)}</option>`).join('')}</select>
+    <button class="btn alt sm" id="compNew">+ New</button><button class="btn danger sm" id="compDel" title="Delete this competition">Delete</button>
+    <label class="check"><input type="checkbox" id="pubChk" ${publicFlag?'checked':''}> Live display link</label>
+    <button class="btn gold sm ${publicFlag?'':'hidden'}" id="copyDisp">Copy display link</button>
+    <button class="btn alt sm" id="signOut">Sign out</button>`;
+  document.getElementById('compSel').onchange=e=>openComp(e.target.value);
+  document.getElementById('compNew').onclick=()=>newComp(false).catch(e=>toast('Could not create: '+(e.code||e.message)));
+  document.getElementById('compDel').onclick=()=>confirmBox('Delete this competition?','“'+(S.title||'Untitled')+'” will be removed from your account. Save a backup first if you need it.',async()=>{
+    try{ const id=compId; if(unsub) unsub(); await compsRef().doc(id).delete(); myComps=myComps.filter(c=>c.id!==id); if(myComps.length) openComp(myComps[0].id); else await newComp(false); toast('Deleted.'); }catch(e){ toast('Could not delete: '+(e.code||e.message)); } });
+  document.getElementById('pubChk').onchange=async e=>{ try{ await compsRef().doc(compId).set({public:e.target.checked},{merge:true}); publicFlag=e.target.checked; renderAcct(); toast(publicFlag?'Display link is on — anyone with the link can view the slides.':'Display link turned off.'); }catch(err){ toast('Could not change: '+(err.code||err.message)); e.target.checked=!e.target.checked; } };
+  const cd=document.getElementById('copyDisp'); if(cd) cd.onclick=async()=>{ try{ await navigator.clipboard.writeText(displayUrl()); toast('Display link copied — open it on the projector/TV.'); }catch(e){ toast(displayUrl()); } };
+  document.getElementById('signOut').onclick=()=>fauth.signOut();
+}
+
+/* Sign in / create account */
+let authMode='signin';
+const AUTH_ERR={'auth/invalid-email':'That email address is not valid.','auth/missing-password':'Please enter your password.',
+  'auth/invalid-credential':'Wrong email or password.','auth/wrong-password':'Wrong email or password.','auth/user-not-found':'No account with that email. Create an account first.',
+  'auth/email-already-in-use':'An account with this email already exists. Sign in instead.','auth/weak-password':'Password must be at least 6 characters.',
+  'auth/too-many-requests':'Too many tries. Wait a few minutes or reset your password.','auth/popup-closed-by-user':'Sign-in window was closed.',
+  'auth/operation-not-allowed':'This sign-in method is not turned on in Firebase (Authentication → Sign-in method).','auth/network-request-failed':'No internet connection.'};
+const authErrText=e=>AUTH_ERR[e&&e.code]||((e&&e.message)||'Something went wrong.');
+function openAuth(mode){ authMode=mode; const m=document.getElementById('authModal'); m.classList.add('show'); setAuthMode(mode); document.getElementById('authErr').textContent=''; setTimeout(()=>document.getElementById(mode==='signup'?'authName':'authEmail').focus(),50); }
+function setAuthMode(mode){
+  authMode=mode; const up=mode==='signup', reset=mode==='reset';
+  document.getElementById('authTitle').textContent=up?'Create your account':reset?'Reset password':'Sign in';
+  document.getElementById('authHint').textContent=up?'Your competitions will be saved to this account.':reset?'We will email you a link to set a new password.':'Sign in to save your competitions online.';
+  document.getElementById('nameRow').classList.toggle('hidden',!up);
+  document.getElementById('pw2Row').classList.toggle('hidden',!up);
+  document.getElementById('pwRow').classList.toggle('hidden',reset);
+  document.getElementById('authPw').autocomplete=up?'new-password':'current-password';
+  document.getElementById('authSubmit').textContent=up?'Create account':reset?'Send reset link':'Sign in';
+  document.getElementById('authSwitch').textContent=up||reset?'I already have an account':'Create an account';
+  document.getElementById('authForgot').classList.toggle('hidden',up||reset);
+  document.getElementById('authErr').textContent='';
+}
+document.getElementById('authSwitch').onclick=e=>{e.preventDefault(); setAuthMode(authMode==='signin'?'signup':'signin');};
+document.getElementById('authForgot').onclick=e=>{e.preventDefault(); setAuthMode('reset');};
+document.getElementById('authClose').onclick=()=>document.getElementById('authModal').classList.remove('show');
+document.getElementById('authGoogle').onclick=async()=>{ try{ await fauth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); document.getElementById('authModal').classList.remove('show'); }catch(e){ document.getElementById('authErr').textContent=authErrText(e); } };
+document.getElementById('authForm').onsubmit=async e=>{
+  e.preventDefault(); const err=document.getElementById('authErr'), btn=document.getElementById('authSubmit');
+  const email=document.getElementById('authEmail').value.trim(), pw=document.getElementById('authPw').value;
+  err.textContent=''; if(!email) return err.textContent='Please enter your email.';
+  btn.disabled=true; btn.style.opacity=.6;
+  try{
+    if(authMode==='reset'){ await fauth.sendPasswordResetEmail(email); err.style.color='var(--ok)'; err.textContent='Reset link sent — check your email (and Spam folder).'; setTimeout(()=>{err.style.color='';},4000); return; }
+    if(authMode==='signup'){
+      const name=document.getElementById('authName').value.trim();
+      if(!name) return err.textContent='Please enter your name.';
+      if(pw.length<6) return err.textContent='Password must be at least 6 characters.';
+      if(pw!==document.getElementById('authPw2').value) return err.textContent='Passwords do not match.';
+      const cred=await fauth.createUserWithEmailAndPassword(email,pw);
+      try{ await cred.user.updateProfile({displayName:name}); user=fauth.currentUser; renderAcct(); }catch(_){}
+      toast('Account created. Welcome, '+name+'!');
+    } else { await fauth.signInWithEmailAndPassword(email,pw); }
+    document.getElementById('authModal').classList.remove('show'); document.getElementById('authPw').value=''; document.getElementById('authPw2').value='';
+  }catch(ex){ err.textContent=authErrText(ex); }
+  finally{ btn.disabled=false; btn.style.opacity=1; }
+};
+
+/* Display (projector / TV) mode: follows the presenter live */
+function startDisplay(){
+  document.body.classList.add('display');
+  ['setup','scores','export'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('present').classList.remove('hidden');
+  const msg=document.getElementById('dispMsg');
+  const say=t=>{ msg.style.display=t?'flex':'none'; msg.innerHTML=t||''; };
+  if(!FB_OK) return say('Firebase is not set up for this app yet.');
+  say('Connecting…');
+  let lastKey='';
+  fdb.collection('competitions').doc(DISPLAY_ID).onSnapshot(snap=>{
+    if(!snap.exists) return say('This competition no longer exists.');
+    const d=snap.data(); S=d.state; say('');
+    slides=buildSlides(); const L=d.live||{slide:0,hidden:false};
+    const i=Math.max(0,Math.min(L.slide||0,slides.length-1)); const h=!!L.hidden && isSuspense(i);
+    const key=JSON.stringify([i,h,d.state]);
+    if(key===lastKey) return; const changedSlide=i!==cur||h!==hiddenStep; lastKey=key; cur=i; hiddenStep=h;
+    if(changedSlide) show(); else drawSlide(sctx,slides[cur],hiddenStep);
+  },err=>say(err.code==='permission-denied'?'This display link is turned off.<br>In the app, tick “Live display link”.':'Could not connect: '+err.code));
+  document.addEventListener('click',()=>{ try{ document.getElementById('stagewrap').requestFullscreen().catch(()=>{}); }catch(e){} },{once:true});
+}
+
+if(FB_OK){
+  firebase.initializeApp(firebaseConfig); fdb=firebase.firestore(); fauth=firebase.auth();
+  if(DISPLAY_ID) startDisplay();
+  else fauth.onAuthStateChanged(u=>{ user=u; if(unsub){unsub();unsub=null;} compId=null; myComps=[]; renderAcct(); setSync(u?'':'Saved on this device');
+    if(u){ try{ localStorage.setItem('rankingApp.pending',JSON.stringify(S)); }catch(e){} loadMyComps().catch(e=>setSync('⚠️ '+(e.code||e.message))); }
+    else if(wasSignedIn){ S=blankState(); try{ localStorage.removeItem('rankingApp.v1'); localStorage.removeItem('rankingApp.localOwner'); localStorage.removeItem('rankingApp.pending'); }catch(e){} bindSetup(); renderTable(); toast('Signed out — nothing is left on this device.'); }
+    wasSignedIn=!!u; });
+} else { if(DISPLAY_ID) startDisplay(); else { renderAcct(); setSync('Saved on this device'); } }
+(document.fonts?document.fonts.load('900 40px Montserrat').then(()=>document.fonts.load('600 40px Montserrat')):Promise.resolve()).catch(()=>{}).then(()=>{});
+</script>
+</body>
+</html>

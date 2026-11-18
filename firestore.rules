@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Signed in with Google OR email/password
+    function signedIn() { return request.auth != null; }
+    function isOwner()  { return signedIn() && resource.data.owner == request.auth.uid; }
+
+    // Only allowed fields, with the right types
+    function validComp(d) {
+      return d.keys().hasOnly(['owner','title','state','public','live','writer','updatedAt'])
+        && d.owner == request.auth.uid
+        && d.title is string && d.title.size() <= 200
+        && d.state is map
+        && (!('public' in d) || d.public is bool)
+        && (!('live' in d) || d.live is map);
+    }
+
+    match /competitions/{compId} {
+      // Owner always; anyone with the link only while "Live display link" is on
+      allow read:   if isOwner() || resource.data.public == true;
+      allow create: if signedIn() && validComp(request.resource.data);
+      allow update: if isOwner() && validComp(request.resource.data);
+      allow delete: if isOwner();
+    }
+
+    // Block everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
