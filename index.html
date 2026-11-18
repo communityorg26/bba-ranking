@@ -356,7 +356,8 @@ function blankState(){
 let S;
 try{ S=JSON.parse(localStorage.getItem('rankingApp.v1')); }catch(e){ S=null; }
 if(!S||!Array.isArray(S.contestants)) S=sampleState();
-if(!S.status) S.status='final'; if(S.showLogo===undefined) S.showLogo=true; if(S.logo===undefined) S.logo=''; if(S.animate===undefined) S.animate=true; if(S.partialLabel===undefined) S.partialLabel='Partial Results'; if(!S.partialOrder) S.partialOrder='score'; if(S.partialRank===undefined) S.partialRank=true;
+function migrateState(){ if(!S||typeof S!=='object') return; if(!Array.isArray(S.rounds)) S.rounds=['Round 1']; if(!Array.isArray(S.contestants)) S.contestants=[]; if(!S.status) S.status='final'; if(S.showLogo===undefined) S.showLogo=true; if(S.logo===undefined) S.logo=''; if(S.animate===undefined) S.animate=true; if(S.partialLabel===undefined) S.partialLabel='Partial Results'; if(!S.partialOrder) S.partialOrder='score'; if(S.partialRank===undefined) S.partialRank=true; }
+migrateState();
 const pRanked=()=>S.partialOrder==='score'&&S.partialRank;
 const isPartial=()=>S.status==='partial';
 function syncStatusUI(){ document.querySelectorAll('.partialOpt').forEach(e=>e.classList.toggle('hidden',!isPartial())); document.querySelectorAll('.finalOpt').forEach(e=>e.classList.toggle('hidden',isPartial()));
@@ -436,7 +437,7 @@ function logoRedraw(){ const pv=document.getElementById('logoPrev'); if(pv) pv.s
 function logoBox(big){
   const a=(logoImg.naturalWidth||5.8)/(logoImg.naturalHeight||1);
   if(big){ let h=150, w=h*a; if(w>900){ w=900; h=w/a; } const top=(arguments[1]!==undefined)?arguments[1]:56; return {x:W/2-w/2, y:top, w, h, ix:W/2-w/2, iy:top, iw:w, ih:h}; }
-  let h=52, w=h*a; if(w>320){ w=320; h=w/a; } const pad=12; return {x:70, y:64, w:w+pad*2, h:h+pad*2, ix:70+pad, iy:64+pad, iw:w, ih:h};
+  let h=66, w=h*a; if(w>390){ w=390; h=w/a; } const pad=12; return {x:66, y:58, w:w+pad*2, h:h+pad*2, ix:70+pad, iy:64+pad, iw:w, ih:h};
 }
 function titleLayout(){
   // vertical stack centred on the slide; returns centre-y of each element
@@ -830,9 +831,9 @@ document.getElementById('xCsv').onclick=()=>{ const csv=csvRows().map(r=>r.map(v
 document.getElementById('xCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(csvRows().map(r=>r.join('\t')).join('\n')); toast('Copied — paste into Excel or Sheets.'); }catch(e){ toast('Copy was blocked by the browser.'); } };
 document.getElementById('xJson').onclick=()=>saveFile(slug()+'_backup.json',JSON.stringify(S,null,2));
 document.getElementById('xLoad').onclick=()=>document.getElementById('loadFile').click();
-document.getElementById('loadFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); if(!Array.isArray(d.contestants)||!Array.isArray(d.rounds)) throw 0; S=d; save(); bindSetup(); renderTable(); toast('Backup loaded.'); }catch(err){ toast('That file is not a valid backup.'); } e.target.value=''; };
-document.getElementById('sample').onclick=()=>confirmBox('Load sample data?','This replaces your current competition and scores.',()=>{S=sampleState();save();bindSetup();renderTable();toast('Sample loaded.');});
-document.getElementById('clear').onclick=()=>confirmBox('Clear everything?','All contestants and scores will be removed. Save a backup first if you need it.',()=>{S=blankState();save();bindSetup();renderTable();toast('Cleared.');});
+document.getElementById('loadFile').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; try{ const d=JSON.parse(await f.text()); if(!Array.isArray(d.contestants)||!Array.isArray(d.rounds)) throw 0; S=d; migrateState(); save(); bindSetup(); renderTable(); toast('Backup loaded.'); }catch(err){ toast('That file is not a valid backup.'); } e.target.value=''; };
+document.getElementById('sample').onclick=()=>confirmBox('Load sample data?','This replaces your current competition and scores.',()=>{S=sampleState();migrateState();save();bindSetup();renderTable();toast('Sample loaded.');});
+document.getElementById('clear').onclick=()=>confirmBox('Clear everything?','All contestants and scores will be removed. Save a backup first if you need it.',()=>{S=blankState();migrateState();save();bindSetup();renderTable();toast('Cleared.');});
 
 /* ---- SEND TO CANVA (viewer's Canva connector) ---- */
 let mcp=null;
@@ -1056,7 +1057,7 @@ function fbPushLive(){
 }
 function applyRemote(d){
   if(!d||!d.state) return;
-  S=d.state; publicFlag=!!d.public;
+  S=d.state; migrateState(); publicFlag=!!d.public;
   try{localStorage.setItem('rankingApp.v1',JSON.stringify(S)); if(user) localStorage.setItem('rankingApp.localOwner',user.uid);}catch(e){}
   const active=document.activeElement;
   bindSetup(); if(!(active&&active.closest&&active.closest('#sc'))) renderTable(); else updateRanks();
@@ -1085,7 +1086,7 @@ async function loadMyComps(){
     if(hasLocal && !owner){
       await newComp(false);  // start clean, then ask
       return confirmBox('Save your work to this account?','You made “'+(JSON.parse(localStorage.getItem('rankingApp.pending')||'{}').title||'a competition')+'” on this device before signing in. Add it to your account?',async()=>{
-        try{ const st=JSON.parse(localStorage.getItem('rankingApp.pending')); if(st){ S=st; bindSetup(); renderTable(); fbQueueSave(); toast('Added to your account.'); } }catch(e){} });
+        try{ const st=JSON.parse(localStorage.getItem('rankingApp.pending')); if(st){ S=st; migrateState(); bindSetup(); renderTable(); fbQueueSave(); toast('Added to your account.'); } }catch(e){} });
     }
     await newComp(false); return;
   }
@@ -1096,7 +1097,7 @@ async function newComp(useCurrent){
   const st=useCurrent?plainState():JSON.parse(JSON.stringify(blankState()));
   const ref=await compsRef().add({owner:user.uid,title:st.title||'Untitled',state:st,public:false,writer:CLIENT,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   myComps.unshift({id:ref.id,title:st.title||'Untitled',t:Date.now()});
-  if(!useCurrent){ S=st; bindSetup(); renderTable(); }
+  if(!useCurrent){ S=st; migrateState(); bindSetup(); renderTable(); }
   openComp(ref.id); toast(useCurrent?'Your competition is now saved online.':'New competition created.');
 }
 function displayUrl(){ return location.origin+location.pathname+'?display='+compId; }
@@ -1186,7 +1187,7 @@ function startDisplay(){
   let lastKey='';
   fdb.collection('competitions').doc(DISPLAY_ID).onSnapshot(snap=>{
     if(!snap.exists) return say('This competition no longer exists.');
-    const d=snap.data(); S=d.state; say('');
+    const d=snap.data(); S=d.state; migrateState(); say('');
     slides=buildSlides(); const L=d.live||{slide:0,hidden:false};
     const i=Math.max(0,Math.min(L.slide||0,slides.length-1)); const h=!!L.hidden && isSuspense(i);
     const key=JSON.stringify([i,h,d.state]);
