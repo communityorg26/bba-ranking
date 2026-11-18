@@ -90,6 +90,17 @@
   #acct img{width:26px;height:26px;border-radius:50%}
   #acct .sp{flex:1}
   #syncState{color:var(--muted);font-weight:600}
+  body.locked header nav,body.locked #hdrUser,body.locked #modeBadge,body.locked main,body.locked #acct{display:none!important}
+  body.locked #authModal{display:flex;background:linear-gradient(135deg,#0c1a38,#1d3570)}
+  body.locked #authClose{display:none}
+  .brand{display:none;text-align:center;margin-bottom:14px}
+  body.locked .brand{display:block}
+  .brand .t{font:900 22px Montserrat,system-ui,sans-serif;color:var(--brand)}
+  .brand .t span{color:#c98a00}
+  .brand .s{color:var(--muted);font-size:12px;font-weight:600}
+  #hdrUser{display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;font-size:13px}
+  #hdrUser button{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;padding:7px 12px;border-radius:999px;font:700 12px Montserrat,system-ui,sans-serif;cursor:pointer}
+  #hdrUser button:hover{background:rgba(255,255,255,.12)}
   body.display{background:#000}
   body.display header,body.display #acct,body.display main>section:not(#present),body.display .ctrl,body.display .thumbs{display:none!important}
   body.display main{max-width:none;padding:0;height:100vh;display:flex;align-items:center;justify-content:center}
@@ -104,6 +115,7 @@
 <header>
   <h1>🏆 Ranking <span>Results</span></h1>
   <span id="modeBadge" style="font:800 11px Montserrat,system-ui,sans-serif;letter-spacing:.5px;padding:5px 10px;border-radius:999px;color:#1b1b1b"></span>
+  <div id="hdrUser" class="hidden"><span id="hdrName"></span><button id="hdrSignOut">Sign out</button></div>
   <nav id="tabs">
     <button data-tab="setup" class="on">1 · Setup</button>
     <button data-tab="scores">2 · Scores</button>
@@ -272,6 +284,7 @@
 </div></div>
 
 <div class="modal" id="authModal"><div class="box" style="max-width:420px">
+  <div class="brand"><div class="t">🏆 BBA Ranking <span>Results</span></div><div class="s">Bright Beginners Academy, Inc.</div></div>
   <h2 style="margin:0 0 4px" id="authTitle">Sign in</h2>
   <p class="hint" id="authHint">Sign in to save your competitions online.</p>
   <button class="btn alt" id="authGoogle" style="width:100%;justify-content:center;margin-bottom:12px">
@@ -947,23 +960,28 @@ function renderAcct(){
   const b=document.getElementById('acctBody');
   if(DISPLAY_ID) return;
   if(!FB_OK){ b.innerHTML='⚠️ Firebase is not set up yet — your work is saved on this device only. (Paste your config in <b>index.html</b>.)'; return; }
-  if(!user){ b.innerHTML='<button class="btn sm" id="signIn">Sign in</button> <button class="btn alt sm" id="signUp">Create account</button> <span style="color:var(--muted)">to save your competitions online and use the live display link</span>';
+  document.body.classList.toggle('locked',!user);
+  document.getElementById('hdrUser').classList.toggle('hidden',!user);
+  if(user) document.getElementById('hdrName').textContent=user.displayName||user.email;
+  if(!user){ if(!document.getElementById('authModal').classList.contains('show')) openAuth('signin'); b.innerHTML='<button class="btn sm" id="signIn">Sign in</button> <button class="btn alt sm" id="signUp">Create account</button> <span style="color:var(--muted)">to save your competitions online and use the live display link</span>';
     document.getElementById('signIn').onclick=()=>openAuth('signin'); document.getElementById('signUp').onclick=()=>openAuth('signup'); return; }
+  document.getElementById('authModal').classList.remove('show');
   b.innerHTML=`<span class="who">${user.photoURL?`<img src="${esc(user.photoURL)}" alt="">`:''}${esc(user.displayName||user.email)}</span>
     <select id="compSel">${myComps.map(c=>`<option value="${c.id}" ${c.id===compId?'selected':''}>${esc(c.title)}</option>`).join('')}</select>
     <button class="btn alt sm" id="compNew">+ New</button><button class="btn danger sm" id="compDel" title="Delete this competition">Delete</button>
     <label class="check"><input type="checkbox" id="pubChk" ${publicFlag?'checked':''}> Live display link</label>
     <button class="btn gold sm ${publicFlag?'':'hidden'}" id="copyDisp">Copy display link</button>
-    <button class="btn alt sm" id="signOut">Sign out</button>`;
+`;
   document.getElementById('compSel').onchange=e=>openComp(e.target.value);
   document.getElementById('compNew').onclick=()=>newComp(false).catch(e=>toast('Could not create: '+(e.code||e.message)));
   document.getElementById('compDel').onclick=()=>confirmBox('Delete this competition?','“'+(S.title||'Untitled')+'” will be removed from your account. Save a backup first if you need it.',async()=>{
     try{ const id=compId; if(unsub) unsub(); await compsRef().doc(id).delete(); myComps=myComps.filter(c=>c.id!==id); if(myComps.length) openComp(myComps[0].id); else await newComp(false); toast('Deleted.'); }catch(e){ toast('Could not delete: '+(e.code||e.message)); } });
   document.getElementById('pubChk').onchange=async e=>{ try{ await compsRef().doc(compId).set({public:e.target.checked},{merge:true}); publicFlag=e.target.checked; renderAcct(); toast(publicFlag?'Display link is on — anyone with the link can view the slides.':'Display link turned off.'); }catch(err){ toast('Could not change: '+(err.code||err.message)); e.target.checked=!e.target.checked; } };
   const cd=document.getElementById('copyDisp'); if(cd) cd.onclick=async()=>{ try{ await navigator.clipboard.writeText(displayUrl()); toast('Display link copied — open it on the projector/TV.'); }catch(e){ toast(displayUrl()); } };
-  document.getElementById('signOut').onclick=()=>fauth.signOut();
+
 }
 
+document.getElementById('hdrSignOut').onclick=()=>confirmBox('Sign out?','Your work is saved online. Signing out clears it from this device.',()=>fauth.signOut());
 /* Sign in / create account */
 let authMode='signin';
 const AUTH_ERR={'auth/invalid-email':'That email address is not valid.','auth/missing-password':'Please enter your password.',
@@ -1036,7 +1054,8 @@ function startDisplay(){
 if(FB_OK){
   firebase.initializeApp(firebaseConfig); fdb=firebase.firestore(); fauth=firebase.auth();
   if(DISPLAY_ID) startDisplay();
-  else fauth.onAuthStateChanged(u=>{ user=u; if(unsub){unsub();unsub=null;} compId=null; myComps=[]; renderAcct(); setSync(u?'':'Saved on this device');
+  else { document.body.classList.add('locked'); }
+  if(!DISPLAY_ID) fauth.onAuthStateChanged(u=>{ user=u; if(unsub){unsub();unsub=null;} compId=null; myComps=[]; renderAcct(); setSync(u?'':'Saved on this device');
     if(u){ try{ localStorage.setItem('rankingApp.pending',JSON.stringify(S)); }catch(e){} loadMyComps().catch(e=>setSync('⚠️ '+(e.code||e.message))); }
     else if(wasSignedIn){ S=blankState(); try{ localStorage.removeItem('rankingApp.v1'); localStorage.removeItem('rankingApp.localOwner'); localStorage.removeItem('rankingApp.pending'); }catch(e){} bindSetup(); renderTable(); toast('Signed out — nothing is left on this device.'); }
     wasSignedIn=!!u; });
