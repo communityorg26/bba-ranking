@@ -426,12 +426,26 @@ function logoRedraw(){ const pv=document.getElementById('logoPrev'); if(pv) pv.s
   if(typeof slides!=='undefined'&&slides.length&&!document.getElementById('present').classList.contains('hidden')){ renderThumbs(); drawSlide(sctx,slides[cur],hiddenStep); } }
 function logoBox(big){
   const a=(logoImg.naturalWidth||5.8)/(logoImg.naturalHeight||1);
-  if(big){ let h=120, w=h*a; if(w>820){ w=820; h=w/a; } const pad=24; return {x:W/2-w/2-pad, y:56, w:w+pad*2, h:h+pad*2, ix:W/2-w/2, iy:56+pad, iw:w, ih:h}; }
+  if(big){ let h=150, w=h*a; if(w>900){ w=900; h=w/a; } const top=(arguments[1]!==undefined)?arguments[1]:56; return {x:W/2-w/2, y:top, w, h, ix:W/2-w/2, iy:top, iw:w, ih:h}; }
   let h=52, w=h*a; if(w>320){ w=320; h=w/a; } const pad=12; return {x:70, y:64, w:w+pad*2, h:h+pad*2, ix:70+pad, iy:64+pad, iw:w, ih:h};
 }
-function drawLogo(ctx,big){
+function titleLayout(){
+  // vertical stack centred on the slide; returns centre-y of each element
+  const hasLogo=S.showLogo&&logoImg.complete&&logoImg.naturalWidth>0;
+  const items=[];
+  if(hasLogo) items.push({k:'logo',h:logoBox(true,0).ih,g:56});
+  if(S.school){ items.push({k:'school',h:36,g:26}); items.push({k:'line',h:5,g:60}); }
+  items.push({k:'title',h:150,g:S.subtitle?34:80});
+  if(S.subtitle) items.push({k:'sub',h:60,g:80});
+  items.push({k:'res',h:44,g:S.date?30:0});
+  if(S.date) items.push({k:'date',h:36,g:0});
+  const total=items.reduce((a,it)=>a+it.h+it.g,0); let y=(H-total)/2; const L={};
+  items.forEach(it=>{ L[it.k]={top:y,cy:y+it.h/2,h:it.h}; y+=it.h+it.g; });
+  return L;
+}
+function drawLogo(ctx,big,top){
   if(!S.showLogo) return; ensureLogo(); if(!logoImg.complete||!logoImg.naturalWidth) return;
-  const b=logoBox(big);
+  const b=big?logoBox(true,top):logoBox(false);
   ctx.save(); if(th().dark){ ctx.shadowColor='rgba(0,0,0,.45)'; ctx.shadowBlur=14; ctx.shadowOffsetY=3; }
   ctx.drawImage(logoImg,b.ix,b.iy,b.iw,b.ih); ctx.restore();
 }
@@ -477,13 +491,13 @@ function shade(hex,p){ const n=parseInt(hex.slice(1),16); let r=n>>16,g=(n>>8)&2
 
 function drawTitle(ctx,pr=1){
   const t=th(); drawBg(ctx,{noFooter:true}); ctx.globalAlpha=eOut(seg(pr,0,.7));
-  drawLogo(ctx,true); const lg=S.showLogo?20:0;
-  spaced(ctx,(S.school||'').toUpperCase(),W/2,250+lg,30,700,t.accent,6);
-  ctx.fillStyle=t.accent; ctx.fillRect(W/2-90,300+lg,180,5);
-  txt(ctx,S.title||'Competition',W/2,450,140,900,t.text,1600);
-  if(S.subtitle) txt(ctx,S.subtitle,W/2,580,56,600,t.muted,1500);
-  spaced(ctx,isPartial()?(S.partialLabel||'Partial Results').toUpperCase():'OFFICIAL RESULTS',W/2,740,40,800,t.accent,isPartial()?10:14);
-  if(S.date) txt(ctx,S.date,W/2,830,32,500,t.muted,1200);
+  ensureLogo(); const L=titleLayout();
+  if(L.logo) drawLogo(ctx,true,L.logo.top);
+  if(L.school){ spaced(ctx,S.school.toUpperCase(),W/2,L.school.cy,30,700,t.accent,6); ctx.fillStyle=t.accent; ctx.fillRect(W/2-90,L.line.top,180,5); }
+  txt(ctx,S.title||'Competition',W/2,L.title.cy,140,900,t.text,1600);
+  if(L.sub) txt(ctx,S.subtitle,W/2,L.sub.cy,56,600,t.muted,1500);
+  spaced(ctx,isPartial()?(S.partialLabel||'Partial Results').toUpperCase():'OFFICIAL RESULTS',W/2,L.res.cy,40,800,t.accent,isPartial()?10:14);
+  if(L.date) txt(ctx,S.date,W/2,L.date.cy,32,500,t.muted,1200);
   ctx.globalAlpha=1;
 }
 const clamp01=v=>Math.max(0,Math.min(1,v));
@@ -899,13 +913,14 @@ document.getElementById('xPptx').onclick=async()=>{
   for(const s of sl){
     const slide=p.addSlide();
     if(s.type==='title'){
-      slide.background={data:bgPlain}; addLogo(slide,true); const lg=S.showLogo?20:0;
-      T(slide,(S.school||'').toUpperCase(),160,220+lg,1600,60,{fontSize:15,bold:true,color:hx(t.accent),charSpacing:4});
-      slide.addShape(p.ShapeType.rect,{x:IN(W/2-90),y:IN(298+lg),w:IN(180),h:IN(5),fill:{color:hx(t.accent)},line:{color:hx(t.accent)}});
-      T(slide,S.title||'Competition',120,360,1680,180,{fontFace:HF,fontSize:60});
-      if(S.subtitle) T(slide,S.subtitle,160,545,1600,80,{fontSize:26,color:hx(t.muted),bold:true});
-      T(slide,isPartial()?(S.partialLabel||'Partial Results').toUpperCase():'OFFICIAL RESULTS',160,705,1600,70,{fontSize:20,bold:true,color:hx(t.accent),charSpacing:isPartial()?5:8});
-      if(S.date) T(slide,S.date,160,800,1600,60,{fontSize:16,color:hx(t.muted)});
+      slide.background={data:bgPlain}; const L=titleLayout(); const box=(it,w,h)=>[it.cy-h/2,w,h];
+      if(L.logo){ const b=logoBox(true,L.logo.top); slide.addImage({data:logoSrc().replace(/^data:/,''),x:IN(b.ix),y:IN(b.iy),w:IN(b.iw),h:IN(b.ih)}); }
+      if(L.school){ T(slide,S.school.toUpperCase(),160,...box(L.school,1600,50),{fontSize:15,bold:true,color:hx(t.accent),charSpacing:4});
+        slide.addShape(p.ShapeType.rect,{x:IN(W/2-90),y:IN(L.line.top),w:IN(180),h:IN(5),fill:{color:hx(t.accent)},line:{color:hx(t.accent)}}); }
+      T(slide,S.title||'Competition',120,...box(L.title,1680,170),{fontFace:HF,fontSize:60});
+      if(L.sub) T(slide,S.subtitle,160,...box(L.sub,1600,70),{fontSize:26,color:hx(t.muted),bold:true});
+      T(slide,isPartial()?(S.partialLabel||'Partial Results').toUpperCase():'OFFICIAL RESULTS',160,...box(L.res,1600,60),{fontSize:20,bold:true,color:hx(t.accent),charSpacing:isPartial()?5:8});
+      if(L.date) T(slide,S.date,160,...box(L.date,1600,50),{fontSize:16,color:hx(t.muted)});
     } else if(s.type==='place'){
       const c=s.c; slide.background={data:bgOnly(s)};
       T(slide,awardLabel(c.rank).toUpperCase(),160,450,1600,100,{fontFace:HF,fontSize:30,color:hx(t.accent),charSpacing:5});
