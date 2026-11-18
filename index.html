@@ -111,7 +111,7 @@
   @media (max-width:700px){main{padding:12px}.card{padding:14px}}
 </style>
 </head>
-<body>
+<body class="locked">
 <header>
   <h1>🏆 Ranking <span>Results</span></h1>
   <span id="modeBadge" style="font:800 11px Montserrat,system-ui,sans-serif;letter-spacing:.5px;padding:5px 10px;border-radius:999px;color:#1b1b1b"></span>
@@ -959,7 +959,7 @@ function displayUrl(){ return location.origin+location.pathname+'?display='+comp
 function renderAcct(){
   const b=document.getElementById('acctBody');
   if(DISPLAY_ID) return;
-  if(!FB_OK){ b.innerHTML='⚠️ Firebase is not set up yet — your work is saved on this device only. (Paste your config in <b>index.html</b>.)'; return; }
+  if(!FB_OK){ document.body.classList.add('locked'); openAuth('signin'); document.getElementById('authErr').textContent='Cannot connect to the sign-in service. Check your internet connection, then reload the page.'; document.getElementById('authSubmit').disabled=true; document.getElementById('authGoogle').disabled=true; b.innerHTML='⚠️ Firebase is not set up yet — your work is saved on this device only. (Paste your config in <b>index.html</b>.)'; return; }
   document.body.classList.toggle('locked',!user);
   document.getElementById('hdrUser').classList.toggle('hidden',!user);
   if(user) document.getElementById('hdrName').textContent=user.displayName||user.email;
@@ -1031,7 +1031,7 @@ document.getElementById('authForm').onsubmit=async e=>{
 
 /* Display (projector / TV) mode: follows the presenter live */
 function startDisplay(){
-  document.body.classList.add('display');
+  document.body.classList.remove('locked'); document.body.classList.add('display');
   ['setup','scores','export'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('present').classList.remove('hidden');
   const msg=document.getElementById('dispMsg');
