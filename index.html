@@ -166,7 +166,8 @@
       <div><label>Ranking order</label>
         <select data-k="order"><option value="desc">Highest score wins</option><option value="asc">Lowest score wins (e.g. time)</option></select></div>
       <div><label>Score unit (optional)</label><input type="text" data-k="unit" placeholder="e.g. points, words"></div>
-      <div><label>Contestant detail column</label><input type="text" data-k="groupLabel" placeholder="Grade & Section"></div>
+      <div><label>Contestant detail column</label><input type="text" data-k="groupLabel" placeholder="Grade & Section">
+        <label class="check" style="margin-top:8px"><input type="checkbox" data-k="showGroup"> Include grade &amp; section</label></div>
       <div style="display:flex;flex-direction:column;gap:10px;justify-content:flex-end">
         <label class="check"><input type="checkbox" data-k="useTB"> Use tie-breaker column</label>
       </div>
@@ -356,7 +357,7 @@ function blankState(){
 let S;
 try{ S=JSON.parse(localStorage.getItem('rankingApp.v1')); }catch(e){ S=null; }
 if(!S||!Array.isArray(S.contestants)) S=sampleState();
-function migrateState(){ if(!S||typeof S!=='object') return; if(!Array.isArray(S.rounds)) S.rounds=['Round 1']; if(!Array.isArray(S.contestants)) S.contestants=[]; if(!S.status) S.status='final'; if(S.showLogo===undefined) S.showLogo=true; if(S.logo===undefined) S.logo=''; if(S.animate===undefined) S.animate=true; if(S.partialLabel===undefined) S.partialLabel='Partial Results'; if(!S.partialOrder) S.partialOrder='score'; if(S.partialRank===undefined) S.partialRank=true; }
+function migrateState(){ if(!S||typeof S!=='object') return; if(!Array.isArray(S.rounds)) S.rounds=['Round 1']; if(!Array.isArray(S.contestants)) S.contestants=[]; if(!S.status) S.status='final'; if(S.showLogo===undefined) S.showLogo=true; if(S.showGroup===undefined) S.showGroup=true; if(S.logo===undefined) S.logo=''; if(S.animate===undefined) S.animate=true; if(S.partialLabel===undefined) S.partialLabel='Partial Results'; if(!S.partialOrder) S.partialOrder='score'; if(S.partialRank===undefined) S.partialRank=true; }
 migrateState();
 const pRanked=()=>S.partialOrder==='score'&&S.partialRank;
 const isPartial=()=>S.status==='partial';
@@ -396,6 +397,8 @@ function awardLabel(rank){
   if(S.labelStyle==='medal') return ['Gold','Silver','Bronze'][rank-1] ? ['Gold Medalist','Silver Medalist','Bronze Medalist'][rank-1] : ord(rank)+' Place';
   return ord(rank)+' Place';
 }
+const SG=()=>S.showGroup!==false;
+const grp=c=>SG()?(c.group||''):'';
 const fmtScore = c => (Number.isInteger(c.total)?c.total:c.total.toFixed(2).replace(/0+$/,''))+(S.unit?' '+S.unit:'');
 
 /* ================= SLIDES ================= */
@@ -533,7 +536,7 @@ function drawPlace(ctx,c,hidden,p=1,rev=false){
   // details fade up
   const da=eOut(seg(p,rev?.45:.8,1));
   if(da>0){ ctx.save(); ctx.globalAlpha=da; const off=(1-da)*30;
-    let y=790+off; if(c.group){ txt(ctx,c.group,W/2,y,46,600,t.muted,1500); y+=85; }
+    let y=790+off; if(grp(c)){ txt(ctx,c.group,W/2,y,46,600,t.muted,1500); y+=85; }
     if(S.showScores){ ctx.font=`800 40px ${F}`; const s=fmtScore(c); const w=ctx.measureText(s).width+80;
       ctx.fillStyle=hexA(t.accent,.18); roundRect(ctx,W/2-w/2,y-35,w,70,35); ctx.fill(); txt(ctx,s,W/2,y+2,40,800,t.accent); }
     ctx.restore(); }
@@ -566,7 +569,7 @@ function drawPodium(ctx,R,pr=1){
     // name stack
     let ny=y-40-(1-na)*25;
     if(S.showScores){ txt(ctx,fmtScore(c),p.x,ny,30,700,t.accent,bw+40); ny-=48; }
-    if(c.group){ txt(ctx,c.group,p.x,ny,28,500,t.muted,bw+60); ny-=50; }
+    if(grp(c)){ txt(ctx,c.group,p.x,ny,28,500,t.muted,bw+60); ny-=50; }
     const lines=wrap2(ctx,c.name,bw+80,52,800);
     for(let k=lines.length-1;k>=0;k--){ txt(ctx,lines[k],p.x,ny,lines.size,800,t.text,bw+80); ny-=lines.size+8; }
     ctx.restore();
@@ -591,7 +594,7 @@ function drawBoard(ctx,sl,pr=1){
   const hy=top+29; const hc=t.muted;
   txt(ctx,'RANK',cols.rank,hy,22,800,hc,140);
   txt(ctx,'NAME',cols.name,hy,22,800,hc,600,'left');
-  txt(ctx,(S.groupLabel||'Details').toUpperCase(),cols.group,hy,22,800,hc,600,'left');
+  if(SG()) txt(ctx,(S.groupLabel||'Details').toUpperCase(),cols.group,hy,22,800,hc,600,'left');
   if(S.showScores) txt(ctx,'SCORE',cols.score,hy,22,800,hc,200);
   sl.rows.forEach((c,i)=>{
     const ra=eOut(seg(pr,.05+i*.07,.35+i*.07)); if(ra<=0) return;
@@ -602,8 +605,8 @@ function drawBoard(ctx,sl,pr=1){
     const cy=y+(rh-8)/2;
     if(c.rank<=3){ ctx.beginPath(); ctx.arc(cols.rank,cy,24,0,Math.PI*2); ctx.fillStyle=MEDAL[c.rank-1]; ctx.fill(); txt(ctx,String(c.rank),cols.rank,cy+1,26,900,shade(MEDAL[c.rank-1],-0.6)); }
     else txt(ctx,String(c.rank),cols.rank,cy+1,28,800,t.text);
-    txt(ctx,c.name,cols.name,cy,32,700,t.text,(cols.group-cols.name)-40,'left');
-    txt(ctx,c.group||'',cols.group,cy,26,500,t.muted,(S.showScores?cols.score-120:x1-30)-cols.group,'left');
+    txt(ctx,c.name,cols.name,cy,32,700,t.text,SG()?(cols.group-cols.name)-40:((S.showScores?cols.score-140:x1-30)-cols.name),'left');
+    if(SG()) txt(ctx,c.group||'',cols.group,cy,26,500,t.muted,(S.showScores?cols.score-120:x1-30)-cols.group,'left');
     if(S.showScores) txt(ctx,fmtScore(c),cols.score,cy,30,800,t.accent,220);
     ctx.restore();
   });
@@ -612,7 +615,7 @@ const fmtNum=v=>{const n=num(v);return n===null?'—':String(n);};
 function scoreCols(){
   const x0=150,x1=W-150, showR=S.rounds.length<=5, rw=150, tw=180;
   const right=(showR?S.rounds.length*rw:0)+tw;
-  const nameX=x0+(pRanked()?140:40), groupX=nameX+Math.round((x1-right-nameX)*0.55);
+  const nameX=x0+(pRanked()?140:40), groupX=SG()?nameX+Math.round((x1-right-nameX)*0.55):x1-right-20;
   const rx=S.rounds.map((_,j)=>x1-right+rw*j+rw/2);
   return {x0,x1,showR,rw,tw,nameX,groupX,rx,totX:x1-tw/2,groupEnd:x1-right-20};
 }
@@ -625,7 +628,7 @@ function drawScores(ctx,sl,pr=1){
   const hy=top+29, hc=t.muted;
   if(pRanked()) txt(ctx,'RANK',C.x0+65,hy,22,800,hc,110);
   txt(ctx,'NAME',C.nameX,hy,22,800,hc,500,'left');
-  txt(ctx,(S.groupLabel||'Details').toUpperCase(),C.groupX,hy,22,800,hc,C.groupEnd-C.groupX,'left');
+  if(SG()) txt(ctx,(S.groupLabel||'Details').toUpperCase(),C.groupX,hy,22,800,hc,C.groupEnd-C.groupX,'left');
   if(C.showR) S.rounds.forEach((r,j)=>txt(ctx,r.toUpperCase(),C.rx[j],hy,20,800,hc,C.rw-14));
   txt(ctx,'TOTAL',C.totX,hy,22,800,t.accent,C.tw-10);
   sl.rows.forEach((c,i)=>{
@@ -635,7 +638,7 @@ function drawScores(ctx,sl,pr=1){
     if(i%2===0){ ctx.fillStyle=hexA(t.text,.05); roundRect(ctx,C.x0,y,C.x1-C.x0,rh-8,12); ctx.fill(); }
     if(pRanked()) txt(ctx,c.hasScore?String(c.rank):'—',C.x0+65,cy+1,30,800,t.text,110);
     txt(ctx,c.name,C.nameX,cy,32,700,t.text,C.groupX-C.nameX-30,'left');
-    txt(ctx,c.group||'',C.groupX,cy,26,500,t.muted,C.groupEnd-C.groupX,'left');
+    if(SG()) txt(ctx,c.group||'',C.groupX,cy,26,500,t.muted,C.groupEnd-C.groupX,'left');
     if(C.showR) S.rounds.forEach((_,j)=>txt(ctx,fmtNum(c.scores[j]),C.rx[j],cy+1,30,600,t.text,C.rw-14));
     const cu=eOut(seg(pr,.15+i*.07,.75+i*.07)); const tv=pr>=1?c.total:(Number.isInteger(c.total)?Math.round(c.total*cu):Math.round(c.total*cu*10)/10);
     txt(ctx,c.hasScore?String(tv)+(S.unit&&!C.showR?' '+S.unit:''):'—',C.totX,cy+1,32,800,t.accent,C.tw-10);
@@ -665,7 +668,7 @@ function bindSetup(){
   document.querySelectorAll('[data-k]').forEach(el=>{
     const k=el.dataset.k;
     if(el.type==='checkbox') el.checked=!!S[k]; else el.value=S[k]??'';
-    el.oninput=el.onchange=()=>{ S[k]=el.type==='checkbox'?el.checked:el.value; save(); if(k==='useTB'||k==='groupLabel'||k==='unit'||k==='order') renderTable(); if(k==='status') syncStatusUI(); };
+    el.oninput=el.onchange=()=>{ S[k]=el.type==='checkbox'?el.checked:el.value; save(); if(k==='useTB'||k==='groupLabel'||k==='unit'||k==='order'||k==='showGroup') renderTable(); if(k==='status') syncStatusUI(); };
   });
   renderRounds(); renderThemes(); syncStatusUI(); ensureLogo(); document.getElementById('logoPrev').src=logoSrc();
 }
@@ -706,10 +709,10 @@ function renderThemes(){
 function esc(s){ return String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function renderTable(){
   const tb=document.getElementById('sc');
-  const head=`<tr><th>#</th><th>Name</th><th>${esc(S.groupLabel||'Details')}</th>${S.rounds.map(r=>`<th style="text-align:center">${esc(r)}</th>`).join('')}${S.useTB?'<th style="text-align:center">Tie-breaker</th>':''}<th style="text-align:center">Total</th><th style="text-align:center">Rank</th><th></th></tr>`;
+  const head=`<tr><th>#</th><th>Name</th>${SG()?`<th>${esc(S.groupLabel||'Details')}</th>`:''}${S.rounds.map(r=>`<th style="text-align:center">${esc(r)}</th>`).join('')}${S.useTB?'<th style="text-align:center">Tie-breaker</th>':''}<th style="text-align:center">Total</th><th style="text-align:center">Rank</th><th></th></tr>`;
   const rows=S.contestants.map((c,i)=>`<tr data-id="${c.id}"><td style="color:var(--muted)">${i+1}</td>
     <td><input type="text" data-f="name" value="${esc(c.name)}" placeholder="Full name"></td>
-    <td><input type="text" data-f="group" value="${esc(c.group)}"></td>
+    ${SG()?`<td><input type="text" data-f="group" value="${esc(c.group)}"></td>`:''}
     ${S.rounds.map((r,j)=>`<td class="num"><input type="text" inputmode="decimal" data-f="s${j}" value="${esc(c.scores[j]??'')}"></td>`).join('')}
     ${S.useTB?`<td class="num"><input type="text" inputmode="decimal" data-f="tb" value="${esc(c.tb)}"></td>`:''}
     <td class="tot"></td><td class="rk"></td><td><button class="x" title="Remove">×</button></td></tr>`).join('');
@@ -737,12 +740,12 @@ document.getElementById('sortBtn').onclick=()=>{ const R=computeRanks(); const o
 
 /* paste */
 const pm=document.getElementById('pasteModal');
-document.getElementById('pasteBtn').onclick=()=>{ document.getElementById('pasteOrder').textContent=['Name',S.groupLabel||'Details',...S.rounds,...(S.useTB?['Tie-breaker']:[])].join(' → '); document.getElementById('pasteArea').value=''; pm.classList.add('show'); };
+document.getElementById('pasteBtn').onclick=()=>{ document.getElementById('pasteOrder').textContent=['Name',...(SG()?[S.groupLabel||'Details']:[]),...S.rounds,...(S.useTB?['Tie-breaker']:[])].join(' → '); document.getElementById('pasteArea').value=''; pm.classList.add('show'); };
 document.getElementById('pasteCancel').onclick=()=>pm.classList.remove('show');
 document.getElementById('pasteOk').onclick=()=>{
   const lines=document.getElementById('pasteArea').value.split(/\r?\n/).filter(l=>l.trim());
   const add=lines.map(l=>{ const p=l.includes('\t')?l.split('\t'):l.split(/\s*[,;]\s*/); const n=S.rounds.length;
-    return {id:uid(),name:(p[0]||'').trim(),group:(p[1]||'').trim(),scores:S.rounds.map((_,j)=>(p[2+j]||'').trim()),tb:S.useTB?(p[2+n]||'').trim():''}; }).filter(c=>c.name);
+    const o=SG()?2:1; return {id:uid(),name:(p[0]||'').trim(),group:SG()?(p[1]||'').trim():'',scores:S.rounds.map((_,j)=>(p[o+j]||'').trim()),tb:S.useTB?(p[o+n]||'').trim():''}; }).filter(c=>c.name);
   if(!add.length) return toast('Nothing to add — check the pasted rows.');
   if(document.getElementById('pasteReplace').checked) S.contestants=add; else S.contestants=S.contestants.filter(c=>c.name.trim()).concat(add);
   save(); renderTable(); pm.classList.remove('show'); toast(`Added ${add.length} contestant${add.length>1?'s':''}.`);
@@ -824,9 +827,9 @@ document.getElementById('xZip').onclick=async()=>{
   saveFile(slug()+'_slides.zip',await z.generateAsync({type:'blob'}));
 };
 function csvRows(){
-  if(isPartial()){ const L=partialList(); const RK=pRanked(); return [[...(RK?['Rank']:[]),'Name',S.groupLabel||'Details',...S.rounds,'Total'],...L.map(c=>[...(RK?[c.hasScore?c.rank:'']:[]),c.name,c.group,...S.rounds.map((_,j)=>c.scores[j]??''),c.hasScore?c.total:''])]; }
-  const R=computeRanks(); const head=['Rank','Award','Name',S.groupLabel||'Details',...S.rounds,...(S.useTB?['Tie-breaker']:[]),'Total'];
-  return [head,...R.map(c=>[c.rank,c.rank<=+S.topN?awardLabel(c.rank):'',c.name,c.group,...S.rounds.map((_,j)=>c.scores[j]??''),...(S.useTB?[c.tb]:[]),c.total])]; }
+  if(isPartial()){ const L=partialList(); const RK=pRanked(); return [[...(RK?['Rank']:[]),'Name',...(SG()?[S.groupLabel||'Details']:[]),...S.rounds,'Total'],...L.map(c=>[...(RK?[c.hasScore?c.rank:'']:[]),c.name,...(SG()?[c.group]:[]),...S.rounds.map((_,j)=>c.scores[j]??''),c.hasScore?c.total:''])]; }
+  const R=computeRanks(); const head=['Rank','Award','Name',...(SG()?[S.groupLabel||'Details']:[]),...S.rounds,...(S.useTB?['Tie-breaker']:[]),'Total'];
+  return [head,...R.map(c=>[c.rank,c.rank<=+S.topN?awardLabel(c.rank):'',c.name,...(SG()?[c.group]:[]),...S.rounds.map((_,j)=>c.scores[j]??''),...(S.useTB?[c.tb]:[]),c.total])]; }
 document.getElementById('xCsv').onclick=()=>{ const csv=csvRows().map(r=>r.map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',')).join('\r\n'); saveFile(slug()+'_results.csv','﻿'+csv); };
 document.getElementById('xCopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(csvRows().map(r=>r.join('\t')).join('\n')); toast('Copied — paste into Excel or Sheets.'); }catch(e){ toast('Copy was blocked by the browser.'); } };
 document.getElementById('xJson').onclick=()=>saveFile(slug()+'_backup.json',JSON.stringify(S,null,2));
@@ -849,22 +852,22 @@ function canvaBriefPartial(){
     S.partialOrder==='score'
       ? `IMPORTANT: this is a PARTIAL ranking from highest to lowest score, not final. ${pRanked()?'Show the rank number given for each contestant. ':''}Do not use medals, trophies, podiums or words like winner or champion. Keep contestants in exactly the order given and use every name, rank and score exactly as written.`
       : `IMPORTANT: this is NOT a ranking. Do not rank, sort by score, number by place, highlight leaders, or use medals, trophies, podiums or words like winner, champion, leading or 1st place. Keep contestants in exactly the order given and use every name and score exactly as written.`].join(' ');
-  const line=c=>`${pRanked()&&c.hasScore?'Rank '+c.rank+' – ':''}${c.name}${c.group?' ('+c.group+')':''}: `+S.rounds.map((r,j)=>`${r} ${fmtNum(c.scores[j])}`).join(', ')+`, Total ${c.hasScore?c.total:'—'}`;
+  const line=c=>`${pRanked()&&c.hasScore?'Rank '+c.rank+' – ':''}${c.name}${grp(c)?' ('+c.group+')':''}: `+S.rounds.map((r,j)=>`${r} ${fmtNum(c.scores[j])}`).join(', ')+`, Total ${c.hasScore?c.total:'—'}`;
   const sections=[{title:S.title||'Competition',description:`Title slide. ${[S.subtitle,S.school,S.date].filter(Boolean).join(' · ')} · ${S.partialLabel||'Partial Results'} (scores only, not final)`}];
-  for(let p=0;p*12<L.length;p++) sections.push({title:(S.partialLabel||'Partial Results')+(L.length>12?` (${p+1})`:''),description:(S.partialOrder==='score'?'Partial ranking table, highest to lowest, in the exact order given. Columns: '+(pRanked()?'Rank, ':''):'Score table in the exact order given (not ranked). Columns: ')+'Name, '+(S.groupLabel||'Details')+', '+S.rounds.join(', ')+', Total.',points:L.slice(p*12,p*12+12).map(line)});
+  for(let p=0;p*12<L.length;p++) sections.push({title:(S.partialLabel||'Partial Results')+(L.length>12?` (${p+1})`:''),description:(S.partialOrder==='score'?'Partial ranking table, highest to lowest, in the exact order given. Columns: '+(pRanked()?'Rank, ':''):'Score table in the exact order given (not ranked). Columns: ')+'Name, '+(SG()?(S.groupLabel||'Details')+', ':'')+S.rounds.join(', ')+', Total.',points:L.slice(p*12,p*12+12).map(line)});
   return {brief,sections,count:L.length};
 }
 function canvaBrief(){
   if(isPartial()) return canvaBriefPartial();
   const t=th(), R=computeRanks().filter(c=>c.hasScore), winners=R.filter(c=>c.rank<=+S.topN);
-  const line=c=>`${c.name}${c.group?' ('+c.group+')':''}${S.showScores?' with '+fmtScore(c):''}`;
+  const line=c=>`${c.name}${grp(c)?' ('+c.group+')':''}${S.showScores?' with '+fmtScore(c):''}`;
   const brief=[`Official results presentation for "${S.title}"${S.subtitle?' — '+S.subtitle:''}${S.school?', '+S.school:''}${S.date?', '+S.date:''}`.replace(/\.*$/,'.'),
     `Celebratory awards-ceremony style with trophies, medals and confetti accents. Colours: ${t.name} (background ${t.bg}, accent ${t.accent}).`,
     `IMPORTANT: use every name, rank, award title and score exactly as written in the outline. Do not invent, change, re-order or add contestants or scores.`].join(' ');
   const sections=[{title:S.title||'Competition Results',description:`Title slide. ${[S.subtitle,S.school,S.date].filter(Boolean).join(' · ')} · Official Results`}];
-  for(let i=winners.length-1;i>=0;i--){ const c=winners[i]; sections.push({title:awardLabel(c.rank),description:`Winner reveal slide: ${awardLabel(c.rank)} (Rank ${c.rank}) is ${line(c)}.`,points:[c.name,...(c.group?[c.group]:[]),...(S.showScores?[fmtScore(c)]:[])]}); }
+  for(let i=winners.length-1;i>=0;i--){ const c=winners[i]; sections.push({title:awardLabel(c.rank),description:`Winner reveal slide: ${awardLabel(c.rank)} (Rank ${c.rank}) is ${line(c)}.`,points:[c.name,...(grp(c)?[c.group]:[]),...(S.showScores?[fmtScore(c)]:[])]}); }
   if(winners.length) sections.push({title:'Our Winners',description:'Podium slide with the top three.',points:R.filter(c=>c.rank<=3).slice(0,3).map(c=>`${awardLabel(c.rank)}: ${line(c)}`)});
-  if(S.showBoard){ for(let p=0;p*12<R.length;p++) sections.push({title:'Final Rankings'+(R.length>12?` (${p+1})`:''),description:'Ranking table, one row per contestant: Rank, Name, '+(S.groupLabel||'Details')+(S.showScores?', Score':''),
+  if(S.showBoard){ for(let p=0;p*12<R.length;p++) sections.push({title:'Final Rankings'+(R.length>12?` (${p+1})`:''),description:'Ranking table, one row per contestant: Rank, Name'+(SG()?', '+(S.groupLabel||'Details'):'')+(S.showScores?', Score':''),
     points:R.slice(p*12,p*12+12).map(c=>`${c.rank}. ${line(c)}`)}); }
   return {brief,sections,count:R.length};
 }
@@ -937,7 +940,7 @@ document.getElementById('xPptx').onclick=async()=>{
       const c=s.c; slide.background={data:bgOnly(s)};
       T(slide,awardLabel(c.rank).toUpperCase(),160,450,1600,100,{fontFace:HF,fontSize:30,color:hx(t.accent),charSpacing:5});
       T(slide,c.name,120,590,1680,160,{fontFace:HF,fontSize:58});
-      let y=760; if(c.group){ T(slide,c.group,160,y,1600,70,{fontSize:22,color:hx(t.muted),bold:true}); y+=85; }
+      let y=760; if(grp(c)){ T(slide,c.group,160,y,1600,70,{fontSize:22,color:hx(t.muted),bold:true}); y+=85; }
       if(S.showScores) T(slide,fmtScore(c),760,y,400,64,{fontSize:20,bold:true,color:hx(t.accent),shape:p.ShapeType.roundRect,rectRadius:0.17,fill:{color:hx(t.accent),transparency:82}});
       footer(slide);
     } else if(s.type==='podium'){
@@ -950,7 +953,7 @@ document.getElementById('xPptx').onclick=async()=>{
         T(slide,String(c.rank),q.x-bw/2,y+10,bw,q.h-70,{fontFace:HF,fontSize:Math.min(60,q.h/6),color:hx(shade(col,-0.6))});
         T(slide,awardLabel(c.rank).toUpperCase(),q.x-bw/2,y+q.h-60,bw,50,{fontSize:11,bold:true,color:hx(shade(col,-0.6))});
         const lines=[{text:c.name,options:{fontFace:HF,fontSize:22,color:hx(t.text),breakLine:true}}];
-        if(c.group) lines.push({text:c.group,options:{fontSize:13,color:hx(t.muted),breakLine:true}});
+        if(grp(c)) lines.push({text:c.group,options:{fontSize:13,color:hx(t.muted),breakLine:true}});
         if(S.showScores) lines.push({text:fmtScore(c),options:{fontSize:14,bold:true,color:hx(t.accent)}});
         T(slide,lines,q.x-bw/2-50,y-230,bw+100,215,{valign:'bottom',fit:'shrink'});
       });
@@ -959,30 +962,30 @@ document.getElementById('xPptx').onclick=async()=>{
       slide.background={data:bgPlain}; const C=scoreCols();
       T(slide,(S.partialLabel||'Partial Results').toUpperCase(),160,75,1600,90,{fontFace:HF,fontSize:22,color:hx(t.accent),charSpacing:5});
       T(slide,(pRanked()?'Partial ranking · not final':S.partialOrder==='score'?'Highest to lowest · not final':'Scores only · not final rankings')+(s.pages>1?`  ·  Page ${s.page+1} of ${s.pages}`:''),160,155,1600,40,{fontSize:11,color:hx(t.muted)});
-      const RK=pRanked(); const hdr=[...(RK?['RANK']:[]),'NAME',(S.groupLabel||'Details').toUpperCase(),...(C.showR?S.rounds.map(r=>r.toUpperCase()):[]),'TOTAL'];
+      const RK=pRanked(); const GC=SG(); const hdr=[...(RK?['RANK']:[]),'NAME',...(GC?[(S.groupLabel||'Details').toUpperCase()]:[]),...(C.showR?S.rounds.map(r=>r.toUpperCase()):[]),'TOTAL'];
       const hfill={color:hx(t.dark?shade(t.bg,0.12):shade(t.bg,-0.06))};
-      const rows=[hdr.map((h,j)=>({text:h,options:{bold:true,fontSize:9,color:hx(j===hdr.length-1?t.accent:t.muted),fill:hfill,align:(j===(RK?1:0)||j===(RK?2:1))?'left':'center'}}))];
+      const rows=[hdr.map((h,j)=>({text:h,options:{bold:true,fontSize:9,color:hx(j===hdr.length-1?t.accent:t.muted),fill:hfill,align:(j===(RK?1:0)||(GC&&j===(RK?2:1)))?'left':'center'}}))];
       s.rows.forEach((c,i)=>{ const fill=i%2===0?{fill:{color:hx(t.dark?shade(t.bg,0.06):shade(t.bg,-0.03))}}:{}; const b={fontSize:14,color:hx(t.text),...fill};
-        rows.push([...(RK?[{text:c.hasScore?String(c.rank):'—',options:{...b,bold:true,align:'center'}}]:[]),{text:c.name,options:{...b,bold:true}},{text:c.group||'',options:{...b,fontSize:12,color:hx(t.muted)}},
+        rows.push([...(RK?[{text:c.hasScore?String(c.rank):'—',options:{...b,bold:true,align:'center'}}]:[]),{text:c.name,options:{...b,bold:true}},...(GC?[{text:c.group||'',options:{...b,fontSize:12,color:hx(t.muted)}}]:[]),
           ...(C.showR?S.rounds.map((_,j)=>({text:fmtNum(c.scores[j]),options:{...b,align:'center'}})):[]),
           {text:c.hasScore?String(c.total):'—',options:{...b,bold:true,align:'center',color:hx(t.accent)}}]); });
       const tw=IN(W-300), rws=C.showR?S.rounds.length*1.05:0, totw=0.95, nw=0.6, rest=tw-rws-totw;
-      slide.addTable(rows,{x:IN(150),y:IN(215),w:tw,colW:[...(RK?[0.8]:[]),(rest-(RK?0.8:0))*0.55,(rest-(RK?0.8:0))*0.45,...(C.showR?S.rounds.map(()=>1.05):[]),totw],rowH:0.34,fontFace:BF,valign:'middle',border:{type:'none'},margin:[0,0.1,0,0.1]});
+      slide.addTable(rows,{x:IN(150),y:IN(215),w:tw,colW:[...(RK?[0.8]:[]),...(GC?[(rest-(RK?0.8:0))*0.55,(rest-(RK?0.8:0))*0.45]:[rest-(RK?0.8:0)]),...(C.showR?S.rounds.map(()=>1.05):[]),totw],rowH:0.34,fontFace:BF,valign:'middle',border:{type:'none'},margin:[0,0.1,0,0.1]});
       footer(slide);
     } else if(s.type==='board'){
       slide.background={data:bgPlain};
       T(slide,'FINAL RANKINGS',160,80,1600,90,{fontFace:HF,fontSize:24,color:hx(t.accent),charSpacing:6});
       if(s.pages>1) T(slide,`Page ${s.page+1} of ${s.pages}`,160,160,1600,40,{fontSize:11,color:hx(t.muted)});
-      const hdr=['RANK','NAME',(S.groupLabel||'Details').toUpperCase(),...(S.showScores?['SCORE']:[])];
+      const GC=SG(); const hdr=['RANK','NAME',...(GC?[(S.groupLabel||'Details').toUpperCase()]:[]),...(S.showScores?['SCORE']:[])];
       const hopt={bold:true,fontSize:11,color:hx(t.muted),fill:{color:hx(t.dark?shade(t.bg,0.12):shade(t.bg,-0.06))}};
-      const rows=[hdr.map((h,j)=>({text:h,options:{...hopt,align:j===0||j===3?'center':'left'}}))];
+      const rows=[hdr.map((h,j)=>({text:h,options:{...hopt,align:j===0||(S.showScores&&j===hdr.length-1)?'center':'left'}}))];
       s.rows.forEach((c,i)=>{
         const fill=c.rank<=3?{color:hx(MEDAL[c.rank-1]),transparency:78}:(i%2===0?{color:hx(t.dark?shade(t.bg,0.06):shade(t.bg,-0.03))}:undefined);
         const base={fontSize:15,color:hx(t.text),...(fill?{fill}:{})};
-        rows.push([{text:String(c.rank),options:{...base,bold:true,align:'center'}},{text:c.name,options:{...base,bold:true}},{text:c.group||'',options:{...base,fontSize:13,color:hx(t.muted)}},
+        rows.push([{text:String(c.rank),options:{...base,bold:true,align:'center'}},{text:c.name,options:{...base,bold:true}},...(GC?[{text:c.group||'',options:{...base,fontSize:13,color:hx(t.muted)}}]:[]),
           ...(S.showScores?[{text:fmtScore(c),options:{...base,bold:true,align:'center',color:hx(t.accent)}}]:[])]);
       });
-      const tw=IN(W-300); const cw=S.showScores?[1.0,tw-1.0-3.2-1.6,3.2,1.6]:[1.0,tw-1.0-4.0,4.0];
+      const tw=IN(W-300); const cw=GC?(S.showScores?[1.0,tw-1.0-3.2-1.6,3.2,1.6]:[1.0,tw-1.0-4.0,4.0]):(S.showScores?[1.0,tw-1.0-1.6,1.6]:[1.0,tw-1.0]);
       slide.addTable(rows,{x:IN(150),y:IN(215),w:tw,colW:cw,rowH:0.34,fontFace:BF,valign:'middle',border:{type:'none'},margin:[0,0.1,0,0.1]});
       footer(slide);
     }
